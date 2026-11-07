@@ -1,14 +1,136 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>onlinetexteditor revived</title>
 <meta name="description" content="A simple online text editor to edit plain text.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='1' width='12' height='14' rx='1.5' fill='%23fff' stroke='%23000' stroke-width='1.2'/%3E%3Cline x1='4.5' y1='4.5' x2='11.5' y2='4.5' stroke='%23000'/%3E%3Cline x1='4.5' y1='7' x2='11.5' y2='7' stroke='%23000'/%3E%3Cline x1='4.5' y1='9.5' x2='9' y2='9.5' stroke='%23000'/%3E%3C/svg%3E">
+<script>
+try {
+  var saved = localStorage.getItem('ote-theme');
+  document.documentElement.setAttribute('data-theme', saved || 'light');
+} catch (e) {}
+</script>
 <style>
+  :root {
+    --bg: #fff;
+    --page-color: #000;
+    --editor-bg: #eee8aa;
+    --editor-border: 1px dotted #000;
+    --editor-border-bottom: 0;
+    --editor-color: #000;
+    --bar-bg: #f7f7f7;
+    --bar-border-top: 1px solid #e3e3e3;
+    --bar-color: #222;
+    --bar-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --bar-font-size: 13.5px;
+    --bar-padding: 7px 12px;
+    --bar-gap: 6px;
+    --btn-bg: #fff;
+    --btn-border: 1px solid #cfcfcf;
+    --btn-color: #222;
+    --btn-radius: 6px;
+    --btn-padding: 6px 14px;
+    --btn-hover-bg: #f0f0f0;
+    --btn-hover-border: #b9b9b9;
+    --link-color: #333;
+    --link-hover-bg: #e9e9e9;
+    --icon-radius: 6px;
+    --menu-bg: #fff;
+    --menu-border: 1px solid #dcdcdc;
+    --menu-radius: 8px;
+    --menu-shadow: 0 6px 16px rgba(0,0,0,.10);
+    --menu-color: #333;
+    --menu-hover-bg: #f0f0f0;
+    --menu-item-padding: 4px 8px;
+    --menu-item-radius: 5px;
+    --credit-color: #8a8a8a;
+    --focus: #7aa7ff;
+  }
+
+  /* ---- Dark: everything grey ---- */
+  :root[data-theme="dark"] {
+    --bg: #1e1e1e;
+    --page-color: #e0e0e0;
+    --editor-bg: #2b2b2b;
+    --editor-border: 1px solid #4a4a4a;
+    --editor-color: #e8e8e8;
+    --bar-bg: #262626;
+    --bar-border-top: 1px solid #3a3a3a;
+    --bar-color: #dcdcdc;
+    --btn-bg: #333;
+    --btn-border: 1px solid #555;
+    --btn-color: #dcdcdc;
+    --btn-hover-bg: #3d3d3d;
+    --btn-hover-border: #666;
+    --link-color: #c8c8c8;
+    --link-hover-bg: #3a3a3a;
+    --menu-bg: #2b2b2b;
+    --menu-border: 1px solid #4a4a4a;
+    --menu-color: #dcdcdc;
+    --menu-hover-bg: #3a3a3a;
+    --menu-shadow: 0 6px 16px rgba(0,0,0,.55);
+    --credit-color: #8c8c8c;
+    --focus: #9a9a9a;
+  }
+
+  /* ---- Dark footer: grey bar only ---- */
+  :root[data-theme="dark-footer"] {
+    --bar-bg: #262626;
+    --bar-border-top: 1px solid #3a3a3a;
+    --bar-color: #dcdcdc;
+    --btn-bg: #333;
+    --btn-border: 1px solid #555;
+    --btn-color: #dcdcdc;
+    --btn-hover-bg: #3d3d3d;
+    --btn-hover-border: #666;
+    --link-color: #c8c8c8;
+    --link-hover-bg: #3a3a3a;
+    --menu-bg: #2b2b2b;
+    --menu-border: 1px solid #4a4a4a;
+    --menu-color: #dcdcdc;
+    --menu-hover-bg: #3a3a3a;
+    --menu-shadow: 0 6px 16px rgba(0,0,0,.55);
+    --credit-color: #8c8c8c;
+  }
+
+  /* ---- Classic: the original 2025 UI, Helvetica + theme dropdown ---- */
+  :root[data-theme="classic"] {
+    --bg: #fff;
+    --page-color: #000;
+    --editor-bg: #eee8aa;
+    --editor-border: 1px dotted #000;
+    --editor-border-bottom: 1px dotted #000;
+    --editor-color: #000;
+    --bar-bg: transparent;
+    --bar-border-top: 0;
+    --bar-color: #000;
+    --bar-font: Helvetica, "Helvetica Neue", Arial, sans-serif;
+    --bar-font-size: 15px;
+    --bar-padding: 6px 8px;
+    --bar-gap: 0;
+    --link-color: #0000ee;
+    --link-hover-bg: transparent;
+    --icon-radius: 0;
+    --menu-bg: #fff;
+    --menu-border: 1px solid #336699;
+    --menu-radius: 0;
+    --menu-shadow: none;
+    --menu-color: #000;
+    --menu-hover-bg: transparent;
+    --menu-item-padding: 0;
+    --menu-item-radius: 0;
+    --credit-color: #000;
+    --focus: #0000ee;
+  }
+
   html, body { height: 100%; margin: 0; }
-  body { background: #fff; color: #000; }
+  body {
+    background: var(--bg);
+    color: var(--page-color);
+    transition: background-color .2s ease, color .2s ease;
+  }
 
   form#textform { display: flex; flex-direction: column; height: 100%; margin: 0; }
 
@@ -17,53 +139,198 @@
     width: 100%;
     box-sizing: border-box;
     margin: 0;
-    padding: 2px;
+    padding: 4px;
     resize: none;
-    background: #eee8aa;          /* original highlight colour */
-    border: 1px dotted #000;
+    background: var(--editor-bg);
+    border: var(--editor-border);
+    border-bottom: var(--editor-border-bottom);
+    color: var(--editor-color);
     font-family: monospace;
     font-size: 14px;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+  }
+  #text:focus { outline: none; }
+
+  /* ---------------- Footer / toolbar bar ---------------- */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--bar-gap);
+    padding: var(--bar-padding);
+    background: var(--bar-bg);
+    border-top: var(--bar-border-top);
+    font-family: var(--bar-font);
+    font-size: var(--bar-font-size);
+    color: var(--bar-color);
+    transition: background-color .2s ease, border-color .2s ease;
   }
 
-  .toolbar { padding: 6px 8px; font-size: 15px; }
-  .toolbar input[type=button] { font-size: 15px; }
+  .toolbar .btn {
+    font: inherit;
+    padding: var(--btn-padding);
+    border: var(--btn-border);
+    border-radius: var(--btn-radius);
+    background: var(--btn-bg);
+    color: var(--btn-color);
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  .toolbar .btn:hover  { background: var(--btn-hover-bg); border-color: var(--btn-hover-border); }
+  .toolbar .btn:active { background: var(--btn-hover-bg); }
 
-  a.q { color: #0000ee; text-decoration: none; }
-  a.q:hover { text-decoration: underline; }
-
-  /* Helvetica Neue for the "more" trigger and everything inside the menu */
-  .morewrap > a.q,
-  .menu a.q {
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  .toolbar a.q {
+    color: var(--link-color);
     text-decoration: none;
+    border-radius: var(--icon-radius);
+    transition: background .15s;
+  }
+  .toolbar a.q:hover { background: var(--link-hover-bg); }
+
+  .toolbar a.icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+    line-height: 1;
   }
 
-  .morewrap { position: relative; display: inline-block; }
+  .toolbar a.q:focus-visible,
+  .toolbar .btn:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+  }
+
+  .dd { position: relative; display: inline-block; }
+  .dd > a.q { display: inline-block; padding: 5px 8px; }
 
   .menu {
     display: none;
     position: absolute;
     right: 0;
-    bottom: 130%;
-    background: #fff;
-    border: 1px solid #336699;
-    padding: 4px 10px 6px;
-    width: 16ex;
-    line-height: 1.9;
+    bottom: calc(100% + 8px);
+    background: var(--menu-bg);
+    border: var(--menu-border);
+    border-radius: var(--menu-radius);
+    box-shadow: var(--menu-shadow);
+    padding: 6px;
+    min-width: 160px;
     white-space: nowrap;
     text-align: left;
     z-index: 1000;
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    font-size: 15px;
+    font-family: var(--bar-font);
+    font-size: var(--bar-font-size);
+    color: var(--menu-color);
+  }
+  .menu a.q,
+  .theme-opt {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: var(--menu-item-padding);
+    border: 0;
+    border-radius: var(--menu-item-radius);
+    background: transparent;
+    color: var(--menu-color);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .menu a.q:hover,
+  .theme-opt:hover { background: var(--menu-hover-bg); }
+
+  .theme-opt { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .theme-opt::after { content: ""; width: 1em; text-align: right; }
+  .theme-opt[aria-pressed="true"] { font-weight: 600; }
+  .theme-opt[aria-pressed="true"]::after { content: "\2713"; opacity: .7; }
+
+  .credit {
+    margin-left: auto;
+    padding-left: 12px;
+    font-size: 11px;
+    letter-spacing: .04em;
+    color: var(--credit-color);
+    user-select: none;
+    white-space: nowrap;
   }
 
-  /* Footer: everything Helvetica */
-  .credit {
+  /* ---------------- classic structural overrides ---------------- */
+  :root[data-theme="classic"] #text { padding: 2px; }
+
+  :root[data-theme="classic"] .toolbar {
+    display: block;
+    font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    color: #000;
+  }
+  :root[data-theme="classic"] .toolbar > * { vertical-align: middle; }
+  :root[data-theme="classic"] .toolbar > * + * { margin-left: 12px; }
+
+  :root[data-theme="classic"] .toolbar .btn {
+    all: revert;
+    font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    cursor: pointer;
+  }
+
+  :root[data-theme="classic"] .toolbar a.q {
+    color: #0000ee;
+    text-decoration: none;
+  }
+  :root[data-theme="classic"] .toolbar a.q:hover {
+    background: transparent;
+    text-decoration: underline;
+  }
+  :root[data-theme="classic"] .toolbar a.icon {
+    display: inline;
+    width: auto;
+    height: auto;
+    font-size: 15px;
+    line-height: normal;
+    padding: 0;
+  }
+  :root[data-theme="classic"] .dd > a.q { padding: 0; }
+
+  :root[data-theme="classic"] .menu {
+    right: 0;
+    bottom: 130%;
+    width: 16ex;
+    min-width: 0;
+    line-height: 1.9;
+    padding: 4px 10px 6px;
+    border-radius: 0;
+    box-shadow: none;
+    font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+  }
+  :root[data-theme="classic"] .menu a.q,
+  :root[data-theme="classic"] .theme-opt {
+    display: block;
+    padding: 0;
+    color: #0000ee;
+    font-weight: normal;
+    background: transparent;
+    text-decoration: none;
+  }
+  :root[data-theme="classic"] .menu a.q:hover,
+  :root[data-theme="classic"] .theme-opt:hover {
+    background: transparent;
+    text-decoration: underline;
+  }
+  :root[data-theme="classic"] .theme-opt[aria-pressed="true"] { font-weight: bold; }
+  :root[data-theme="classic"] .theme-opt::after { content: ""; width: auto; }
+  :root[data-theme="classic"] .theme-opt[aria-pressed="true"]::after { content: " \2713"; }
+
+  :root[data-theme="classic"] .credit {
     position: fixed;
     bottom: 12px;
     right: 6px;
+    margin: 0;
+    padding: 0;
     font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
     font-size: 11px;
+    letter-spacing: normal;
     color: #000;
   }
 </style>
@@ -76,31 +343,37 @@
     onkeydown="return insertTab(event, this);">Welcome to Online Text Editor - your online plain text editor. Enter or paste your text here. To download and save it, click on the button below.</textarea>
 
   <div class="toolbar">
-    <input type="button" value="Download &amp; Save" title="Download &amp; Save" onclick="downloadText();">
-    &nbsp;&nbsp;
-    <a class="q" href="javascript:void(0)" title="Scroll to Top"
+    <input type="button" class="btn" value="Download &amp; Save" title="Download &amp; Save" onclick="downloadText();">
+    <a class="q icon" href="javascript:void(0)" title="Scroll to Top"
        onclick="document.getElementById('text').scrollTop = 0;">&uarr;</a>
-    &nbsp;&nbsp;
-    <a class="q" href="javascript:void(0)" title="Scroll to Bottom"
+    <a class="q icon" href="javascript:void(0)" title="Scroll to Bottom"
        onclick="var t = document.getElementById('text'); t.scrollTop = t.scrollHeight;">&darr;</a>
-    &nbsp;&nbsp;
-    <span class="morewrap">
+
+    <span class="dd">
       <a class="q" href="javascript:void(0)" rel="nofollow" title="More Options"
-         onclick="toggleMore(); return false;">more&nbsp;&raquo;</a>
-      <span class="menu" id="more">
-        <a class="q" href="javascript:void(0)" onclick="copySel('copy')" title="Copy to Clipboard">Copy</a>
-        or
-        <a class="q" href="javascript:void(0)" onclick="copySel('cut')" title="Cut to Clipboard">Cut</a><br>
-        <a class="q" href="javascript:void(0)" onclick="countWords()" title="Word Count">Word Count</a><br>
-        <a class="q" href="javascript:void(0)" onclick="countChars()" title="Character Count">Character Count</a><br>
-        <a class="q" href="javascript:void(0)" onclick="openPopUp()" title="Open As PopUp">Open As PopUp</a><br>
+         onclick="toggleMenu('more-menu'); return false;">more&nbsp;&raquo;</a>
+      <span class="menu" id="more-menu">
+        <a class="q" href="javascript:void(0)" onclick="countWords()" title="Word Count">Word Count</a>
+        <a class="q" href="javascript:void(0)" onclick="countChars()" title="Character Count">Character Count</a>
+        <a class="q" href="javascript:void(0)" onclick="openPopUp()" title="Open As PopUp">Open As PopUp</a>
         <a class="q" href="./" target="_blank" title="Open a new Tab">New Tab</a>
       </span>
     </span>
+
+    <span class="dd">
+      <a class="q" href="javascript:void(0)" rel="nofollow" title="Theme"
+         onclick="toggleMenu('theme-menu'); return false;">theme&nbsp;&raquo;</a>
+      <span class="menu" id="theme-menu">
+        <button type="button" class="theme-opt" data-theme-opt="dark">Dark</button>
+        <button type="button" class="theme-opt" data-theme-opt="dark-footer">Dark footer</button>
+        <button type="button" class="theme-opt" data-theme-opt="light">Light</button>
+        <button type="button" class="theme-opt" data-theme-opt="classic">Classic</button>
+      </span>
+    </span>
+
+    <span class="credit">Revived by InsanityGames</span>
   </div>
 </form>
-
-<span class="credit">Revived by InsanityGames</span>
 
 <script>
 var default_text = "Welcome to Online Text Editor - your online plain text editor. Enter or paste your text here. To download and save it, click on the button below.";
@@ -131,24 +404,15 @@ function downloadText() {
   setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
 }
 
-/* --- Copy / Cut --- */
-function copySel(mode) {
-  var el = document.getElementById('text');
-  el.focus();
-  el.select();
-  try { document.execCommand(mode); } catch (e) {}
-  hideMore();
-}
-
 /* --- Word / character count --- */
 function countWords() {
   var t = document.getElementById('text').value.replace(/\s+/g, ' ').trim();
   alert('Words: ' + (t ? t.split(' ').length : 0));
-  hideMore();
+  closeAllMenus();
 }
 function countChars() {
   alert('Characters: ' + document.getElementById('text').value.length);
-  hideMore();
+  closeAllMenus();
 }
 
 /* --- Open contents in a popup window --- */
@@ -164,21 +428,45 @@ function openPopUp() {
   w.document.close();
   w.document.getElementById('t').value = document.getElementById('text').value;
   w.document.getElementById('t').focus();
-  hideMore();
+  closeAllMenus();
 }
 
-/* --- The "more" menu --- */
-function toggleMore() {
-  var m = document.getElementById('more');
-  m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+/* --- Dropdown menus --- */
+function closeAllMenus() {
+  var menus = document.querySelectorAll('.menu');
+  for (var i = 0; i < menus.length; i++) menus[i].style.display = 'none';
 }
-function hideMore() {
-  document.getElementById('more').style.display = 'none';
+function toggleMenu(id) {
+  var m = document.getElementById(id);
+  var wasOpen = m.style.display === 'block';
+  closeAllMenus();
+  if (!wasOpen) m.style.display = 'block';
 }
 document.addEventListener('click', function (e) {
-  var wrap = document.querySelector('.morewrap');
-  if (!wrap.contains(e.target)) hideMore();
+  if (!e.target.closest('.dd')) closeAllMenus();
 });
+
+/* --- Theme switcher --- */
+function setTheme(name) {
+  document.documentElement.setAttribute('data-theme', name);
+  try { localStorage.setItem('ote-theme', name); } catch (e) {}
+  var opts = document.querySelectorAll('.theme-opt');
+  for (var i = 0; i < opts.length; i++) {
+    opts[i].setAttribute('aria-pressed',
+      opts[i].getAttribute('data-theme-opt') === name ? 'true' : 'false');
+  }
+}
+(function initTheme() {
+  var current = document.documentElement.getAttribute('data-theme') || 'light';
+  var opts = document.querySelectorAll('.theme-opt');
+  for (var i = 0; i < opts.length; i++) {
+    (function (b) {
+      b.setAttribute('aria-pressed',
+        b.getAttribute('data-theme-opt') === current ? 'true' : 'false');
+      b.addEventListener('click', function () { setTheme(b.getAttribute('data-theme-opt')); });
+    })(opts[i]);
+  }
+})();
 </script>
 
 </body>
