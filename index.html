@@ -262,9 +262,6 @@ try {
     white-space: nowrap;
   }
 
-  /* Mobile-only "Done" button (keyboard dismissal) */
-  .kbd-done { -webkit-tap-highlight-color: transparent; }
-
   /* ---------------- classic structural overrides ---------------- */
   :root[data-theme="classic"] #text { padding: 2px; }
 
@@ -415,7 +412,6 @@ try {
       </span>
     </span>
 
-    <button type="button" class="btn kbd-done" id="kbdDone" aria-label="Close keyboard" hidden>Done</button>
     <span class="credit">Revived by InsanityGames</span>
   </div>
 </form>
@@ -511,27 +507,6 @@ function setTheme(name) {
       b.addEventListener('click', function () { setTheme(b.getAttribute('data-theme-opt')); });
     })(opts[i]);
   }
-})();
-
-/* --- Mobile: Done button to dismiss the iOS keyboard --- */
-(function () {
-  var textEl  = document.getElementById('text');
-  var doneBtn = document.getElementById('kbdDone');
-  var mobile  = window.matchMedia ? window.matchMedia('(max-width: 640px)') : { matches: false };
-
-  function syncDone() {
-    var editing = document.activeElement === textEl;
-    doneBtn.hidden = !(editing && mobile.matches);
-  }
-  textEl.addEventListener('focus', syncDone);
-  textEl.addEventListener('blur', syncDone);
-  if (mobile.addEventListener) mobile.addEventListener('change', syncDone);
-
-  doneBtn.addEventListener('click', function () {
-    textEl.blur();          /* dismisses the keyboard on iOS from a user gesture */
-    this.blur();
-    syncDone();
-  });
 })();
 
 /* --- Mobile: size the editor to the visual viewport (keyboard-aware) --- */
