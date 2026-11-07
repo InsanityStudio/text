@@ -2,7 +2,7 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>onlinetexteditor revived</title>
 <meta name="description" content="A simple online text editor to edit plain text.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='1' width='12' height='14' rx='1.5' fill='%23fff' stroke='%23000' stroke-width='1.2'/%3E%3Cline x1='4.5' y1='4.5' x2='11.5' y2='4.5' stroke='%23000'/%3E%3Cline x1='4.5' y1='7' x2='11.5' y2='7' stroke='%23000'/%3E%3Cline x1='4.5' y1='9.5' x2='9' y2='9.5' stroke='%23000'/%3E%3C/svg%3E">
@@ -126,9 +126,14 @@ try {
   }
 
   html, body { height: 100%; margin: 0; }
+  @supports (height: 100dvh) { html, body { height: 100dvh; } }
+
   body {
     background: var(--bg);
     color: var(--page-color);
+    overflow: hidden;               /* editor scrolls internally */
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
     transition: background-color .2s ease, color .2s ease;
   }
 
@@ -162,6 +167,7 @@ try {
     font-family: var(--bar-font);
     font-size: var(--bar-font-size);
     color: var(--bar-color);
+    touch-action: manipulation;
     transition: background-color .2s ease, border-color .2s ease;
   }
 
@@ -252,8 +258,12 @@ try {
     letter-spacing: .04em;
     color: var(--credit-color);
     user-select: none;
+    pointer-events: none;
     white-space: nowrap;
   }
+
+  /* Mobile-only "Done" button (keyboard dismissal) */
+  .kbd-done { -webkit-tap-highlight-color: transparent; }
 
   /* ---------------- classic structural overrides ---------------- */
   :root[data-theme="classic"] #text { padding: 2px; }
@@ -274,10 +284,7 @@ try {
     cursor: pointer;
   }
 
-  :root[data-theme="classic"] .toolbar a.q {
-    color: #0000ee;
-    text-decoration: none;
-  }
+  :root[data-theme="classic"] .toolbar a.q { color: #0000ee; text-decoration: none; }
   :root[data-theme="classic"] .toolbar a.q:hover {
     background: transparent;
     text-decoration: underline;
@@ -333,6 +340,43 @@ try {
     letter-spacing: normal;
     color: #000;
   }
+
+  /* ---------------- Mobile ---------------- */
+  @media (max-width: 640px) {
+    /* toolbar to the top, editor fills the rest */
+    form#textform {
+      flex-direction: column-reverse;
+      height: var(--vvh, 100%);          /* --vvh tracks the keyboard via JS */
+    }
+
+    .toolbar {
+      flex-wrap: wrap;
+      row-gap: 4px;
+      border-top: 0;
+      padding-top: calc(7px + env(safe-area-inset-top, 0px));
+    }
+
+    /* editor now carries the divider on its own top edge */
+    #text {
+      font-size: 16px;                    /* >=16px stops iOS zoom-on-focus */
+      padding: 8px;
+      border-bottom: var(--editor-border);
+    }
+
+    .toolbar a.icon { width: 34px; height: 34px; font-size: 16px; }
+    .dd > a.q { padding: 8px 10px; }
+    .credit { font-size: 10px; padding-left: 8px; }
+
+    /* dropdowns must open downward now that the bar is on top */
+    .menu { top: calc(100% + 8px); bottom: auto; }
+    .menu a.q,
+    .theme-opt { padding: 8px; }
+
+    :root[data-theme="classic"] .menu { top: calc(100% + 8px); bottom: auto; }
+    :root[data-theme="classic"] .toolbar {
+      padding-top: calc(6px + env(safe-area-inset-top, 0px));
+    }
+  }
 </style>
 </head>
 <body>
@@ -371,6 +415,7 @@ try {
       </span>
     </span>
 
+    <button type="button" class="btn kbd-done" id="kbdDone" aria-label="Close keyboard" hidden>Done</button>
     <span class="credit">Revived by InsanityGames</span>
   </div>
 </form>
@@ -466,6 +511,39 @@ function setTheme(name) {
       b.addEventListener('click', function () { setTheme(b.getAttribute('data-theme-opt')); });
     })(opts[i]);
   }
+})();
+
+/* --- Mobile: Done button to dismiss the iOS keyboard --- */
+(function () {
+  var textEl  = document.getElementById('text');
+  var doneBtn = document.getElementById('kbdDone');
+  var mobile  = window.matchMedia ? window.matchMedia('(max-width: 640px)') : { matches: false };
+
+  function syncDone() {
+    var editing = document.activeElement === textEl;
+    doneBtn.hidden = !(editing && mobile.matches);
+  }
+  textEl.addEventListener('focus', syncDone);
+  textEl.addEventListener('blur', syncDone);
+  if (mobile.addEventListener) mobile.addEventListener('change', syncDone);
+
+  doneBtn.addEventListener('click', function () {
+    textEl.blur();          /* dismisses the keyboard on iOS from a user gesture */
+    this.blur();
+    syncDone();
+  });
+})();
+
+/* --- Mobile: size the editor to the visual viewport (keyboard-aware) --- */
+(function () {
+  var vv = window.visualViewport;
+  if (!vv) return;
+  function setVvh() {
+    document.documentElement.style.setProperty('--vvh', vv.height + 'px');
+  }
+  vv.addEventListener('resize', setVvh);
+  vv.addEventListener('scroll', setVvh);
+  setVvh();
 })();
 </script>
 
