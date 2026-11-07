@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Online Text Editor &amp; Wordpad for Notes</title>
+<meta name="description" content="A simple online text editor to edit plain text.">
+<link rel="icon" href="edit-pad.png">
+<style>
+  html, body { height: 100%; margin: 0; }
+  body { background: #fff; color: #000; }
+
+  form#textform { display: flex; flex-direction: column; height: 100%; margin: 0; }
+
+  #text {
+    flex: 1 1 auto;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 2px;
+    resize: none;
+    background: #eee8aa;          /* original highlight colour */
+    border: 1px dotted #000;
+    font-family: monospace;
+    font-size: 14px;
+  }
+
+  .toolbar { padding: 6px 8px; font-size: 15px; }
+  .toolbar input[type=button] { font-size: 15px; }
+
+  a.q { color: #0000ee; text-decoration: none; }
+  a.q:hover { text-decoration: underline; }
+
+  .morewrap { position: relative; display: inline-block; }
+
+  .menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    bottom: 130%;
+    background: #fff;
+    border: 1px solid #336699;
+    padding: 4px 10px 6px;
+    width: 16ex;
+    line-height: 1.9;
+    white-space: nowrap;
+    text-align: left;
+    z-index: 1000;
+  }
+</style>
+</head>
+<body>
+
+<form name="textform" id="textform" onsubmit="return false;">
+  <textarea spellcheck="true" name="text" id="text"
+    onclick="if (this.value === default_text) this.value = '';"
+    onkeydown="return insertTab(event, this);">Welcome to Online Text Editor - your online plain text editor. Enter or paste your text here. To download and save it, click on the button below.</textarea>
+
+  <div class="toolbar">
+    <input type="button" value="Download &amp; Save" title="Download &amp; Save" onclick="downloadText();">
+    &nbsp;&nbsp;
+    <a class="q" href="javascript:void(0)" title="Scroll to Top"
+       onclick="document.getElementById('text').scrollTop = 0;">&uarr;</a>
+    &nbsp;&nbsp;
+    <a class="q" href="javascript:void(0)" title="Scroll to Bottom"
+       onclick="var t = document.getElementById('text'); t.scrollTop = t.scrollHeight;">&darr;</a>
+    &nbsp;&nbsp;
+    <span class="morewrap">
+      <a class="q" href="javascript:void(0)" rel="nofollow" title="More Options"
+         onclick="toggleMore(); return false;">more&nbsp;&raquo;</a>
+      <span class="menu" id="more">
+        <a class="q" href="javascript:void(0)" onclick="copySel('copy')" title="Copy to Clipboard">Copy</a>
+        or
+        <a class="q" href="javascript:void(0)" onclick="copySel('cut')" title="Cut to Clipboard">Cut</a><br>
+        <a class="q" href="javascript:void(0)" onclick="countWords()" title="Word Count">Word Count</a><br>
+        <a class="q" href="javascript:void(0)" onclick="countChars()" title="Character Count">Character Count</a><br>
+        <a class="q" href="javascript:void(0)" onclick="openPopUp()" title="Open As PopUp">Open As PopUp</a><br>
+        <a class="q" href="./" target="_blank" title="Open a new Tab">New Tab</a>
+      </span>
+    </span>
+  </div>
+</form>
+
+<script>
+var default_text = "Welcome to Online Text Editor - your online plain text editor. Enter or paste your text here. To download and save it, click on the button below.";
+
+/* --- Tab key inserts a tab instead of moving focus --- */
+function insertTab(e, el) {
+  if (e.keyCode === 9) {
+    e.preventDefault();
+    var s = el.selectionStart, t = el.selectionEnd;
+    el.value = el.value.slice(0, s) + "\t" + el.value.slice(t);
+    el.selectionStart = el.selectionEnd = s + 1;
+    return false;
+  }
+  return true;
+}
+
+/* --- Download & Save (client side, replaces download.html) --- */
+function downloadText() {
+  var text = document.getElementById('text').value;
+  var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url;
+  a.download = 'text.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+}
+
+/* --- Copy / Cut --- */
+function copySel(mode) {
+  var el = document.getElementById('text');
+  el.focus();
+  el.select();
+  try { document.execCommand(mode); } catch (e) {}
+  hideMore();
+}
+
+/* --- Word / character count --- */
+function countWords() {
+  var t = document.getElementById('text').value.replace(/\s+/g, ' ').trim();
+  alert('Words: ' + (t ? t.split(' ').length : 0));
+  hideMore();
+}
+function countChars() {
+  alert('Characters: ' + document.getElementById('text').value.length);
+  hideMore();
+}
+
+/* --- Open contents in a popup window --- */
+function openPopUp() {
+  var w = window.open('', 'otepopup', 'width=800,height=600,resizable=yes,scrollbars=yes');
+  if (!w) { alert('Please allow pop-ups for this site.'); return; }
+  w.document.write(
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Online Text Editor</title></head>' +
+    '<body style="margin:0"><textarea id="t" spellcheck="true" style="width:100%;height:100vh;' +
+    'box-sizing:border-box;background:#eee8aa;border:1px dotted #000;resize:none;' +
+    'font-family:monospace;font-size:14px;padding:2px"></textarea></body></html>'
+  );
+  w.document.close();
+  w.document.getElementById('t').value = document.getElementById('text').value;
+  w.document.getElementById('t').focus();
+  hideMore();
+}
+
+/* --- The "more" menu --- */
+function toggleMore() {
+  var m = document.getElementById('more');
+  m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+}
+function hideMore() {
+  document.getElementById('more').style.display = 'none';
+}
+document.addEventListener('click', function (e) {
+  var wrap = document.querySelector('.morewrap');
+  if (!wrap.contains(e.target)) hideMore();
+});
+</script>
+
+</body>
+</html>
