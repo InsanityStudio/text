@@ -6,521 +6,197 @@
 <title>onlinetexteditor revived</title>
 <meta name="description" content="A simple online text editor to edit plain text.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='2' y='1' width='12' height='14' rx='1.5' fill='%23fff' stroke='%23000' stroke-width='1.2'/%3E%3Cline x1='4.5' y1='4.5' x2='11.5' y2='4.5' stroke='%23000'/%3E%3Cline x1='4.5' y1='7' x2='11.5' y2='7' stroke='%23000'/%3E%3Cline x1='4.5' y1='9.5' x2='9' y2='9.5' stroke='%23000'/%3E%3C/svg%3E">
-<script>
-try {
-  var saved = localStorage.getItem('ote-theme');
-  document.documentElement.setAttribute('data-theme', saved || 'light');
-} catch (e) {}
-</script>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('ote-theme')||'light'}catch(e){}</script>
 <style>
-  :root {
-    --bg: #fff;
-    --page-color: #000;
-    --editor-bg: #eee8aa;
-    --editor-border: 1px dotted #000;
-    --editor-border-bottom: 0;
-    --editor-color: #000;
-    --bar-bg: #f7f7f7;
-    --bar-border-top: 1px solid #e3e3e3;
-    --bar-color: #222;
-    --bar-font: "Helvetica Neue", Helvetica, Arial, sans-serif;
-    --bar-font-size: 13.5px;
-    --bar-padding: 7px 12px;
-    --bar-gap: 6px;
-    --btn-bg: #fff;
-    --btn-border: 1px solid #cfcfcf;
-    --btn-color: #222;
-    --btn-radius: 6px;
-    --btn-padding: 6px 14px;
-    --btn-hover-bg: #f0f0f0;
-    --btn-hover-border: #b9b9b9;
-    --link-color: #333;
-    --link-hover-bg: #e9e9e9;
-    --icon-radius: 6px;
-    --menu-bg: #fff;
-    --menu-border: 1px solid #dcdcdc;
-    --menu-radius: 8px;
-    --menu-shadow: 0 6px 16px rgba(0,0,0,.10);
-    --menu-color: #333;
-    --menu-hover-bg: #f0f0f0;
-    --menu-item-padding: 4px 8px;
-    --menu-item-radius: 5px;
-    --credit-color: #8a8a8a;
-    --focus: #7aa7ff;
-  }
-
-  /* ---- Dark: everything grey ---- */
-  :root[data-theme="dark"] {
-    --bg: #1e1e1e;
-    --page-color: #e0e0e0;
-    --editor-bg: #2b2b2b;
-    --editor-border: 1px solid #4a4a4a;
-    --editor-color: #e8e8e8;
-    --bar-bg: #262626;
-    --bar-border-top: 1px solid #3a3a3a;
-    --bar-color: #dcdcdc;
-    --btn-bg: #333;
-    --btn-border: 1px solid #555;
-    --btn-color: #dcdcdc;
-    --btn-hover-bg: #3d3d3d;
-    --btn-hover-border: #666;
-    --link-color: #c8c8c8;
-    --link-hover-bg: #3a3a3a;
-    --menu-bg: #2b2b2b;
-    --menu-border: 1px solid #4a4a4a;
-    --menu-color: #dcdcdc;
-    --menu-hover-bg: #3a3a3a;
-    --menu-shadow: 0 6px 16px rgba(0,0,0,.55);
-    --credit-color: #8c8c8c;
-    --focus: #9a9a9a;
-  }
-
-  /* ---- Dark footer: grey bar only ---- */
-  :root[data-theme="dark-footer"] {
-    --bar-bg: #262626;
-    --bar-border-top: 1px solid #3a3a3a;
-    --bar-color: #dcdcdc;
-    --btn-bg: #333;
-    --btn-border: 1px solid #555;
-    --btn-color: #dcdcdc;
-    --btn-hover-bg: #3d3d3d;
-    --btn-hover-border: #666;
-    --link-color: #c8c8c8;
-    --link-hover-bg: #3a3a3a;
-    --menu-bg: #2b2b2b;
-    --menu-border: 1px solid #4a4a4a;
-    --menu-color: #dcdcdc;
-    --menu-hover-bg: #3a3a3a;
-    --menu-shadow: 0 6px 16px rgba(0,0,0,.55);
-    --credit-color: #8c8c8c;
-  }
-
-  /* ---- Classic: the original 2025 UI, Helvetica + theme dropdown ---- */
-  :root[data-theme="classic"] {
-    --bg: #fff;
-    --page-color: #000;
-    --editor-bg: #eee8aa;
-    --editor-border: 1px dotted #000;
-    --editor-border-bottom: 1px dotted #000;
-    --editor-color: #000;
-    --bar-bg: transparent;
-    --bar-border-top: 0;
-    --bar-color: #000;
-    --bar-font: Helvetica, "Helvetica Neue", Arial, sans-serif;
-    --bar-font-size: 15px;
-    --bar-padding: 6px 8px;
-    --bar-gap: 0;
-    --link-color: #0000ee;
-    --link-hover-bg: transparent;
-    --icon-radius: 0;
-    --menu-bg: #fff;
-    --menu-border: 1px solid #336699;
-    --menu-radius: 0;
-    --menu-shadow: none;
-    --menu-color: #000;
-    --menu-hover-bg: transparent;
-    --menu-item-padding: 0;
-    --menu-item-radius: 0;
-    --credit-color: #000;
-    --focus: #0000ee;
-  }
-
-  html, body { height: 100%; margin: 0; }
-  @supports (height: 100dvh) { html, body { height: 100dvh; } }
-
-  body {
-    background: var(--bg);
-    color: var(--page-color);
-    overflow: hidden;               /* editor scrolls internally */
-    overscroll-behavior: none;
-    -webkit-text-size-adjust: 100%;
-    transition: background-color .2s ease, color .2s ease;
-  }
-
-  form#textform { display: flex; flex-direction: column; height: 100%; margin: 0; }
-
-  #text {
-    flex: 1 1 auto;
-    width: 100%;
-    box-sizing: border-box;
-    margin: 0;
-    padding: 4px;
-    resize: none;
-    background: var(--editor-bg);
-    border: var(--editor-border);
-    border-bottom: var(--editor-border-bottom);
-    color: var(--editor-color);
-    font-family: monospace;
-    font-size: 14px;
-    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
-  }
-  #text:focus { outline: none; }
-
-  /* ---------------- Footer / toolbar bar ---------------- */
-  .toolbar {
-    display: flex;
-    align-items: center;
-    gap: var(--bar-gap);
-    padding: var(--bar-padding);
-    background: var(--bar-bg);
-    border-top: var(--bar-border-top);
-    font-family: var(--bar-font);
-    font-size: var(--bar-font-size);
-    color: var(--bar-color);
-    touch-action: manipulation;
-    transition: background-color .2s ease, border-color .2s ease;
-  }
-
-  .toolbar .btn {
-    font: inherit;
-    padding: var(--btn-padding);
-    border: var(--btn-border);
-    border-radius: var(--btn-radius);
-    background: var(--btn-bg);
-    color: var(--btn-color);
-    cursor: pointer;
-    transition: background .15s, border-color .15s;
-  }
-  .toolbar .btn:hover  { background: var(--btn-hover-bg); border-color: var(--btn-hover-border); }
-  .toolbar .btn:active { background: var(--btn-hover-bg); }
-
-  .toolbar a.q {
-    color: var(--link-color);
-    text-decoration: none;
-    border-radius: var(--icon-radius);
-    transition: background .15s;
-  }
-  .toolbar a.q:hover { background: var(--link-hover-bg); }
-
-  .toolbar a.icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    font-size: 14px;
-    line-height: 1;
-  }
-
-  .toolbar a.q:focus-visible,
-  .toolbar .btn:focus-visible {
-    outline: 2px solid var(--focus);
-    outline-offset: 1px;
-  }
-
-  .dd { position: relative; display: inline-block; }
-  .dd > a.q { display: inline-block; padding: 5px 8px; }
-
-  .menu {
-    display: none;
-    position: absolute;
-    right: 0;
-    bottom: calc(100% + 8px);
-    background: var(--menu-bg);
-    border: var(--menu-border);
-    border-radius: var(--menu-radius);
-    box-shadow: var(--menu-shadow);
-    padding: 6px;
-    min-width: 160px;
-    white-space: nowrap;
-    text-align: left;
-    z-index: 1000;
-    font-family: var(--bar-font);
-    font-size: var(--bar-font-size);
-    color: var(--menu-color);
-  }
-  .menu a.q,
-  .theme-opt {
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
-    padding: var(--menu-item-padding);
-    border: 0;
-    border-radius: var(--menu-item-radius);
-    background: transparent;
-    color: var(--menu-color);
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-  }
-  .menu a.q:hover,
-  .theme-opt:hover { background: var(--menu-hover-bg); }
-
-  .theme-opt { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-  .theme-opt::after { content: ""; width: 1em; text-align: right; }
-  .theme-opt[aria-pressed="true"] { font-weight: 600; }
-  .theme-opt[aria-pressed="true"]::after { content: "\2713"; opacity: .7; }
-
-  .credit {
-    margin-left: auto;
-    padding-left: 12px;
-    font-size: 11px;
-    letter-spacing: .04em;
-    color: var(--credit-color);
-    user-select: none;
-    pointer-events: none;
-    white-space: nowrap;
-  }
-
-  /* ---------------- classic structural overrides ---------------- */
-  :root[data-theme="classic"] #text { padding: 2px; }
-
-  :root[data-theme="classic"] .toolbar {
-    display: block;
-    font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
-    font-size: 15px;
-    color: #000;
-  }
-  :root[data-theme="classic"] .toolbar > * { vertical-align: middle; }
-  :root[data-theme="classic"] .toolbar > * + * { margin-left: 12px; }
-
-  :root[data-theme="classic"] .toolbar .btn {
-    all: revert;
-    font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
-    font-size: 15px;
-    cursor: pointer;
-  }
-
-  :root[data-theme="classic"] .toolbar a.q { color: #0000ee; text-decoration: none; }
-  :root[data-theme="classic"] .toolbar a.q:hover {
-    background: transparent;
-    text-decoration: underline;
-  }
-  :root[data-theme="classic"] .toolbar a.icon {
-    display: inline;
-    width: auto;
-    height: auto;
-    font-size: 15px;
-    line-height: normal;
-    padding: 0;
-  }
-  :root[data-theme="classic"] .dd > a.q { padding: 0; }
-
-  :root[data-theme="classic"] .menu {
-    right: 0;
-    bottom: 130%;
-    width: 16ex;
-    min-width: 0;
-    line-height: 1.9;
-    padding: 4px 10px 6px;
-    border-radius: 0;
-    box-shadow: none;
-    font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
-    font-size: 15px;
-  }
-  :root[data-theme="classic"] .menu a.q,
-  :root[data-theme="classic"] .theme-opt {
-    display: block;
-    padding: 0;
-    color: #0000ee;
-    font-weight: normal;
-    background: transparent;
-    text-decoration: none;
-  }
-  :root[data-theme="classic"] .menu a.q:hover,
-  :root[data-theme="classic"] .theme-opt:hover {
-    background: transparent;
-    text-decoration: underline;
-  }
-  :root[data-theme="classic"] .theme-opt[aria-pressed="true"] { font-weight: bold; }
-  :root[data-theme="classic"] .theme-opt::after { content: ""; width: auto; }
-  :root[data-theme="classic"] .theme-opt[aria-pressed="true"]::after { content: " \2713"; }
-
-  :root[data-theme="classic"] .credit {
-    position: fixed;
-    bottom: 12px;
-    right: 6px;
-    margin: 0;
-    padding: 0;
-    font-family: Helvetica, "Helvetica Neue", Arial, sans-serif;
-    font-size: 11px;
-    letter-spacing: normal;
-    color: #000;
-  }
-
-  /* ---------------- Mobile ---------------- */
-  @media (max-width: 640px) {
-    /* toolbar to the top, editor fills the rest */
-    form#textform {
-      flex-direction: column-reverse;
-      height: var(--vvh, 100%);          /* --vvh tracks the keyboard via JS */
-    }
-
-    .toolbar {
-      flex-wrap: wrap;
-      row-gap: 4px;
-      border-top: 0;
-      padding-top: calc(7px + env(safe-area-inset-top, 0px));
-    }
-
-    /* editor now carries the divider on its own top edge */
-    #text {
-      font-size: 16px;                    /* >=16px stops iOS zoom-on-focus */
-      padding: 8px;
-      border-bottom: var(--editor-border);
-    }
-
-    .toolbar a.icon { width: 34px; height: 34px; font-size: 16px; }
-    .dd > a.q { padding: 8px 10px; }
-    .credit { font-size: 10px; padding-left: 8px; }
-
-    /* dropdowns must open downward now that the bar is on top */
-    .menu { top: calc(100% + 8px); bottom: auto; }
-    .menu a.q,
-    .theme-opt { padding: 8px; }
-
-    :root[data-theme="classic"] .menu { top: calc(100% + 8px); bottom: auto; }
-    :root[data-theme="classic"] .toolbar {
-      padding-top: calc(6px + env(safe-area-inset-top, 0px));
-    }
-  }
+:root{--bg:#fff;--page-color:#000;--editor-bg:#eee8aa;--editor-border:1px dotted #000;--editor-border-bottom:0;--editor-color:#000;--bar-bg:#f7f7f7;--bar-border-top:1px solid #e3e3e3;--bar-color:#222;--bar-font:"Helvetica Neue",Helvetica,Arial,sans-serif;--bar-font-size:13.5px;--bar-padding:7px 12px;--bar-gap:6px;--btn-bg:#fff;--btn-border:1px solid #cfcfcf;--btn-color:#222;--btn-radius:6px;--btn-padding:6px 14px;--btn-hover-bg:#f0f0f0;--btn-hover-border:#b9b9b9;--link-color:#333;--link-hover-bg:#e9e9e9;--icon-radius:6px;--menu-bg:#fff;--menu-border:1px solid #dcdcdc;--menu-radius:8px;--menu-shadow:0 6px 16px rgba(0,0,0,.10);--menu-color:#333;--menu-hover-bg:#f0f0f0;--menu-item-padding:4px 8px;--menu-item-radius:5px;--credit-color:#8a8a8a;--focus:#7aa7ff}
+:root[data-theme=dark]{--bg:#1e1e1e;--page-color:#e0e0e0;--editor-bg:#2b2b2b;--editor-border:1px solid #4a4a4a;--editor-color:#e8e8e8;--bar-bg:#262626;--bar-border-top:1px solid #3a3a3a;--bar-color:#dcdcdc;--btn-bg:#333;--btn-border:1px solid #555;--btn-color:#dcdcdc;--btn-hover-bg:#3d3d3d;--btn-hover-border:#666;--link-color:#c8c8c8;--link-hover-bg:#3a3a3a;--menu-bg:#2b2b2b;--menu-border:1px solid #4a4a4a;--menu-color:#dcdcdc;--menu-hover-bg:#3a3a3a;--menu-shadow:0 6px 16px rgba(0,0,0,.55);--credit-color:#8c8c8c;--focus:#9a9a9a}
+:root[data-theme=dark-footer]{--bar-bg:#262626;--bar-border-top:1px solid #3a3a3a;--bar-color:#dcdcdc;--btn-bg:#333;--btn-border:1px solid #555;--btn-color:#dcdcdc;--btn-hover-bg:#3d3d3d;--btn-hover-border:#666;--link-color:#c8c8c8;--link-hover-bg:#3a3a3a;--menu-bg:#2b2b2b;--menu-border:1px solid #4a4a4a;--menu-color:#dcdcdc;--menu-hover-bg:#3a3a3a;--menu-shadow:0 6px 16px rgba(0,0,0,.55);--credit-color:#8c8c8c}
+:root[data-theme=classic]{--bg:#fff;--page-color:#000;--editor-bg:#eee8aa;--editor-border:1px dotted #000;--editor-border-bottom:1px dotted #000;--editor-color:#000;--bar-bg:transparent;--bar-border-top:0;--bar-color:#000;--bar-font:Helvetica,"Helvetica Neue",Arial,sans-serif;--bar-font-size:15px;--bar-padding:6px 8px;--bar-gap:0;--link-color:#00e;--link-hover-bg:transparent;--icon-radius:0;--menu-bg:#fff;--menu-border:1px solid #369;--menu-radius:0;--menu-shadow:none;--menu-color:#000;--menu-hover-bg:transparent;--menu-item-padding:0;--menu-item-radius:0;--credit-color:#000;--focus:#00e}
+html,body{height:100%;margin:0}
+@supports (height:100dvh){html,body{height:100dvh}}
+body{background:var(--bg);color:var(--page-color);overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%;transition:background-color .2s,color .2s}
+form{display:flex;flex-direction:column;height:100%;margin:0}
+#text{flex:1 1 auto;width:100%;box-sizing:border-box;margin:0;padding:4px;resize:none;background:var(--editor-bg);border:var(--editor-border);border-bottom:var(--editor-border-bottom);color:var(--editor-color);font:14px monospace;transition:background-color .2s,color .2s,border-color .2s}
+#text:focus{outline:0}
+.toolbar{display:flex;align-items:center;gap:var(--bar-gap);padding:var(--bar-padding);background:var(--bar-bg);border-top:var(--bar-border-top);font-family:var(--bar-font);font-size:var(--bar-font-size);color:var(--bar-color);touch-action:manipulation;transition:background-color .2s,border-color .2s}
+.toolbar .btn{font:inherit;padding:var(--btn-padding);border:var(--btn-border);border-radius:var(--btn-radius);background:var(--btn-bg);color:var(--btn-color);cursor:pointer;transition:background .15s,border-color .15s}
+.toolbar .btn:hover{background:var(--btn-hover-bg);border-color:var(--btn-hover-border)}
+.toolbar .btn:active{background:var(--btn-hover-bg)}
+.toolbar a.q{color:var(--link-color);text-decoration:none;border-radius:var(--icon-radius);transition:background .15s}
+.toolbar a.q:hover{background:var(--link-hover-bg)}
+.toolbar a.icon{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;font-size:14px;line-height:1}
+.toolbar a.q:focus-visible,.toolbar .btn:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.dd{position:relative;display:inline-block}
+.dd>a.q{display:inline-block;padding:5px 8px}
+.menu{display:none;position:absolute;right:0;bottom:calc(100% + 8px);background:var(--menu-bg);border:var(--menu-border);border-radius:var(--menu-radius);box-shadow:var(--menu-shadow);padding:6px;min-width:160px;white-space:nowrap;text-align:left;z-index:1000;font-family:var(--bar-font);font-size:var(--bar-font-size);color:var(--menu-color)}
+.menu.open{display:block}
+.menu a.q,.theme-opt{display:block;width:100%;box-sizing:border-box;padding:var(--menu-item-padding);border:0;border-radius:var(--menu-item-radius);background:transparent;color:var(--menu-color);font:inherit;text-align:left;cursor:pointer}
+.menu a.q:hover,.theme-opt:hover{background:var(--menu-hover-bg)}
+.theme-opt{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.theme-opt::after{content:"";width:1em;text-align:right}
+.theme-opt[aria-pressed=true]{font-weight:600}
+.theme-opt[aria-pressed=true]::after{content:"\2713";opacity:.7}
+.credit{margin-left:auto;padding-left:12px;font-size:11px;letter-spacing:.04em;color:var(--credit-color);user-select:none;pointer-events:none;white-space:nowrap}
+:root[data-theme=classic] #text{padding:2px}
+:root[data-theme=classic] .toolbar{display:block;font:15px Helvetica,"Helvetica Neue",Arial,sans-serif;color:#000}
+:root[data-theme=classic] .toolbar>*{vertical-align:middle}
+:root[data-theme=classic] .toolbar>*+*{margin-left:12px}
+:root[data-theme=classic] .toolbar .btn{all:revert;font:15px Helvetica,"Helvetica Neue",Arial,sans-serif;cursor:pointer}
+:root[data-theme=classic] .toolbar a.q{color:#00e;text-decoration:none}
+:root[data-theme=classic] .toolbar a.q:hover{background:transparent;text-decoration:underline}
+:root[data-theme=classic] .toolbar a.icon{display:inline;width:auto;height:auto;font-size:15px;line-height:normal;padding:0}
+:root[data-theme=classic] .dd>a.q{padding:0}
+:root[data-theme=classic] .menu{right:0;bottom:130%;width:16ex;min-width:0;line-height:1.9;padding:4px 10px 6px;border-radius:0;box-shadow:none;font:15px Helvetica,"Helvetica Neue",Arial,sans-serif}
+:root[data-theme=classic] .menu a.q,:root[data-theme=classic] .theme-opt{display:block;padding:0;color:#00e;font-weight:400;background:transparent;text-decoration:none}
+:root[data-theme=classic] .menu a.q:hover,:root[data-theme=classic] .theme-opt:hover{background:transparent;text-decoration:underline}
+:root[data-theme=classic] .theme-opt[aria-pressed=true]{font-weight:700}
+:root[data-theme=classic] .theme-opt::after{content:"";width:auto}
+:root[data-theme=classic] .theme-opt[aria-pressed=true]::after{content:" \2713"}
+:root[data-theme=classic] .credit{position:fixed;bottom:12px;right:6px;margin:0;padding:0;font:11px Helvetica,"Helvetica Neue",Arial,sans-serif;letter-spacing:normal;color:#000}
+@media (max-width:640px){
+form{flex-direction:column-reverse;height:var(--vvh,100%)}
+.toolbar{flex-wrap:wrap;row-gap:4px;border-top:0;padding-top:calc(7px + env(safe-area-inset-top,0px))}
+#text{font-size:16px;padding:8px;border-bottom:var(--editor-border)}
+.toolbar a.icon{width:34px;height:34px;font-size:16px}
+.dd>a.q{padding:8px 10px}
+.credit{font-size:10px;padding-left:8px}
+.menu,:root[data-theme=classic] .menu{top:calc(100% + 8px);bottom:auto}
+.menu a.q,.theme-opt{padding:8px}
+:root[data-theme=classic] .toolbar{padding-top:calc(6px + env(safe-area-inset-top,0px))}
+}
 </style>
 </head>
 <body>
-
-<form name="textform" id="textform" onsubmit="return false;">
-  <textarea spellcheck="true" name="text" id="text"
-    onclick="if (this.value === default_text) this.value = '';"
-    onkeydown="return insertTab(event, this);">Welcome to Online Text Editor - your online plain text editor. Enter or paste your text here. To download and save it, click on the button below.</textarea>
-
-  <div class="toolbar">
-    <input type="button" class="btn" value="Download &amp; Save" title="Download &amp; Save" onclick="downloadText();">
-    <a class="q icon" href="javascript:void(0)" title="Scroll to Top"
-       onclick="document.getElementById('text').scrollTop = 0;">&uarr;</a>
-    <a class="q icon" href="javascript:void(0)" title="Scroll to Bottom"
-       onclick="var t = document.getElementById('text'); t.scrollTop = t.scrollHeight;">&darr;</a>
-
-    <span class="dd">
-      <a class="q" href="javascript:void(0)" rel="nofollow" title="More Options"
-         onclick="toggleMenu('more-menu'); return false;">more&nbsp;&raquo;</a>
-      <span class="menu" id="more-menu">
-        <a class="q" href="javascript:void(0)" onclick="countWords()" title="Word Count">Word Count</a>
-        <a class="q" href="javascript:void(0)" onclick="countChars()" title="Character Count">Character Count</a>
-        <a class="q" href="javascript:void(0)" onclick="openPopUp()" title="Open As PopUp">Open As PopUp</a>
-        <a class="q" href="./" target="_blank" title="Open a new Tab">New Tab</a>
-      </span>
-    </span>
-
-    <span class="dd">
-      <a class="q" href="javascript:void(0)" rel="nofollow" title="Theme"
-         onclick="toggleMenu('theme-menu'); return false;">theme&nbsp;&raquo;</a>
-      <span class="menu" id="theme-menu">
-        <button type="button" class="theme-opt" data-theme-opt="dark">Dark</button>
-        <button type="button" class="theme-opt" data-theme-opt="dark-footer">Dark footer</button>
-        <button type="button" class="theme-opt" data-theme-opt="light">Light</button>
-        <button type="button" class="theme-opt" data-theme-opt="classic">Classic</button>
-      </span>
-    </span>
-
-    <span class="credit">Revived by InsanityGames</span>
-  </div>
+<form id="textform" onsubmit="return false">
+<textarea id="text" name="text" spellcheck="true">Welcome to Online Text Editor - your online plain text editor. Enter or paste your text here. To download and save it, click on the button below.</textarea>
+<div class="toolbar">
+<input type="button" class="btn" value="Download &amp; Save" title="Download &amp; Save" data-a="download">
+<a class="q icon" href="#" title="Scroll to Top" data-a="top">&uarr;</a>
+<a class="q icon" href="#" title="Scroll to Bottom" data-a="bottom">&darr;</a>
+<span class="dd">
+<a class="q" href="#" rel="nofollow" title="More Options" data-a="menu" data-m="more-menu">more&nbsp;&raquo;</a>
+<span class="menu" id="more-menu">
+<a class="q" href="#" title="Word Count" data-a="words">Word Count</a>
+<a class="q" href="#" title="Character Count" data-a="chars">Character Count</a>
+<a class="q" href="#" title="Open As PopUp" data-a="popup">Open As PopUp</a>
+<a class="q" href="./" target="_blank" title="Open a new Tab">New Tab</a>
+</span>
+</span>
+<span class="dd">
+<a class="q" href="#" rel="nofollow" title="Theme" data-a="menu" data-m="theme-menu">theme&nbsp;&raquo;</a>
+<span class="menu" id="theme-menu">
+<button type="button" class="theme-opt" data-theme-opt="dark">Dark</button>
+<button type="button" class="theme-opt" data-theme-opt="dark-footer">Dark footer</button>
+<button type="button" class="theme-opt" data-theme-opt="light">Light</button>
+<button type="button" class="theme-opt" data-theme-opt="classic">Classic</button>
+</span>
+</span>
+<span class="credit">Revived by InsanityGames</span>
+</div>
 </form>
-
 <script>
-var default_text = "Welcome to Online Text Editor - your online plain text editor. Enter or paste your text here. To download and save it, click on the button below.";
-
-/* --- Tab key inserts a tab instead of moving focus --- */
-function insertTab(e, el) {
-  if (e.keyCode === 9) {
-    e.preventDefault();
-    var s = el.selectionStart, t = el.selectionEnd;
-    el.value = el.value.slice(0, s) + "\t" + el.value.slice(t);
-    el.selectionStart = el.selectionEnd = s + 1;
-    return false;
-  }
-  return true;
-}
-
-/* --- Download & Save (client side, replaces download.html) --- */
-function downloadText() {
-  var text = document.getElementById('text').value;
-  var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a');
-  a.href = url;
-  a.download = 'text.txt';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-}
-
-/* --- Word / character count --- */
-function countWords() {
-  var t = document.getElementById('text').value.replace(/\s+/g, ' ').trim();
-  alert('Words: ' + (t ? t.split(' ').length : 0));
-  closeAllMenus();
-}
-function countChars() {
-  alert('Characters: ' + document.getElementById('text').value.length);
-  closeAllMenus();
-}
-
-/* --- Open contents in a popup window --- */
-function openPopUp() {
-  var w = window.open('', 'otepopup', 'width=800,height=600,resizable=yes,scrollbars=yes');
-  if (!w) { alert('Please allow pop-ups for this site.'); return; }
-  w.document.write(
-    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Online Text Editor</title></head>' +
-    '<body style="margin:0"><textarea id="t" spellcheck="true" style="width:100%;height:100vh;' +
-    'box-sizing:border-box;background:#eee8aa;border:1px dotted #000;resize:none;' +
-    'font-family:monospace;font-size:14px;padding:2px"></textarea></body></html>'
-  );
-  w.document.close();
-  w.document.getElementById('t').value = document.getElementById('text').value;
-  w.document.getElementById('t').focus();
-  closeAllMenus();
-}
-
-/* --- Dropdown menus --- */
-function closeAllMenus() {
-  var menus = document.querySelectorAll('.menu');
-  for (var i = 0; i < menus.length; i++) menus[i].style.display = 'none';
-}
-function toggleMenu(id) {
-  var m = document.getElementById(id);
-  var wasOpen = m.style.display === 'block';
-  closeAllMenus();
-  if (!wasOpen) m.style.display = 'block';
-}
-document.addEventListener('click', function (e) {
-  if (!e.target.closest('.dd')) closeAllMenus();
-});
-
-/* --- Theme switcher --- */
-function setTheme(name) {
-  document.documentElement.setAttribute('data-theme', name);
-  try { localStorage.setItem('ote-theme', name); } catch (e) {}
-  var opts = document.querySelectorAll('.theme-opt');
-  for (var i = 0; i < opts.length; i++) {
-    opts[i].setAttribute('aria-pressed',
-      opts[i].getAttribute('data-theme-opt') === name ? 'true' : 'false');
-  }
-}
-(function initTheme() {
-  var current = document.documentElement.getAttribute('data-theme') || 'light';
-  var opts = document.querySelectorAll('.theme-opt');
-  for (var i = 0; i < opts.length; i++) {
-    (function (b) {
-      b.setAttribute('aria-pressed',
-        b.getAttribute('data-theme-opt') === current ? 'true' : 'false');
-      b.addEventListener('click', function () { setTheme(b.getAttribute('data-theme-opt')); });
-    })(opts[i]);
-  }
-})();
-
-/* --- Mobile: size the editor to the visual viewport (keyboard-aware) --- */
 (function () {
-  var vv = window.visualViewport;
-  if (!vv) return;
-  function setVvh() {
-    document.documentElement.style.setProperty('--vvh', vv.height + 'px');
+  var doc = document, root = doc.documentElement, ta = doc.getElementById('text');
+  var defaultText = ta.value;
+
+  function closeMenus() {
+    var m = doc.querySelectorAll('.menu.open');
+    for (var i = 0; i < m.length; i++) m[i].classList.remove('open');
   }
-  vv.addEventListener('resize', setVvh);
-  vv.addEventListener('scroll', setVvh);
-  setVvh();
+
+  function download() {
+    var url = URL.createObjectURL(new Blob([ta.value], { type: 'text/plain;charset=utf-8' }));
+    var a = doc.createElement('a');
+    a.href = url; a.download = 'text.txt';
+    doc.body.appendChild(a); a.click(); doc.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function popup() {
+    var w = window.open('', 'otepopup', 'width=800,height=600,resizable=yes,scrollbars=yes');
+    if (!w) { alert('Please allow pop-ups for this site.'); return; }
+    w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>Online Text Editor</title></head><body style="margin:0"><textarea id="t" spellcheck="true" style="width:100%;height:100vh;box-sizing:border-box;background:#eee8aa;border:1px dotted #000;resize:none;font-family:monospace;font-size:14px;padding:2px"></textarea></body></html>');
+    w.document.close();
+    var t = w.document.getElementById('t');
+    t.value = ta.value; t.focus();
+  }
+
+  var actions = {
+    download: download,
+    top: function () { ta.scrollTop = 0; },
+    bottom: function () { ta.scrollTop = ta.scrollHeight; },
+    words: function () { var t = ta.value.trim(); alert('Words: ' + (t ? t.split(/\s+/).length : 0)); },
+    chars: function () { alert('Characters: ' + ta.value.length); },
+    popup: popup
+  };
+
+  /* Single delegated click handler */
+  doc.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-a],[data-theme-opt]');
+    if (!el) { if (!e.target.closest('.dd')) closeMenus(); return; }
+    if (el.hasAttribute('data-theme-opt')) { setTheme(el.getAttribute('data-theme-opt')); return; }
+    var a = el.getAttribute('data-a');
+    if (el.tagName === 'A') e.preventDefault();
+    if (a === 'menu') {
+      var m = doc.getElementById(el.getAttribute('data-m')), was = m.classList.contains('open');
+      closeMenus();
+      if (!was) m.classList.add('open');
+      return;
+    }
+    if (actions[a]) { actions[a](); if (a === 'words' || a === 'chars' || a === 'popup') closeMenus(); }
+  });
+
+  /* Clear the welcome text on first click, only if it's still untouched */
+  ta.addEventListener('click', function clear() {
+    if (ta.value === defaultText) ta.value = '';
+    ta.removeEventListener('click', clear);
+  });
+
+  /* Insert text through the browser's editing pipeline so the undo stack survives */
+  function insertText(text) {
+    if (!doc.execCommand('insertText', false, text)) {
+      ta.setRangeText(text, ta.selectionStart, ta.selectionEnd, 'end');
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
+  ta.addEventListener('keydown', function (e) {
+    var k = e.key;
+    if (k === 'Tab') { e.preventDefault(); insertText('\t'); return; }
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && k.length === 1) {
+      var l = k.toLowerCase();
+      /* Ctrl+Y and Ctrl+Shift+Z both redo */
+      if (l === 'y' || (l === 'z' && e.shiftKey)) { e.preventDefault(); doc.execCommand('redo'); }
+    }
+  });
+
+  /* Theme */
+  var opts = doc.querySelectorAll('.theme-opt');
+  function markTheme(name) {
+    for (var i = 0; i < opts.length; i++)
+      opts[i].setAttribute('aria-pressed', opts[i].getAttribute('data-theme-opt') === name ? 'true' : 'false');
+  }
+  function setTheme(name) {
+    root.setAttribute('data-theme', name);
+    try { localStorage.setItem('ote-theme', name); } catch (e) {}
+    markTheme(name);
+  }
+  markTheme(root.getAttribute('data-theme') || 'light');
+
+  /* Mobile: keyboard-aware height */
+  var vv = window.visualViewport;
+  if (vv) {
+    var raf = 0;
+    var setVvh = function () {
+      raf = 0;
+      root.style.setProperty('--vvh', vv.height + 'px');
+    };
+    var sched = function () { if (!raf) raf = requestAnimationFrame(setVvh); };
+    vv.addEventListener('resize', sched);
+    vv.addEventListener('scroll', sched);
+    setVvh();
+  }
 })();
 </script>
-
 </body>
 </html>
