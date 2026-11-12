@@ -36,7 +36,10 @@ form{display:flex;flex-direction:column;height:100%;margin:0}
 .theme-opt::after{content:"";width:1em;text-align:right}
 .theme-opt[aria-pressed=true]{font-weight:600}
 .theme-opt[aria-pressed=true]::after{content:"\2713";opacity:.7}
-.credit{margin-left:auto;padding-left:12px;font-size:11px;letter-spacing:.04em;color:var(--credit-color);user-select:none;pointer-events:none;white-space:nowrap}
+.counts{margin-left:auto;font-size:11px;letter-spacing:.04em;color:var(--credit-color);user-select:none;white-space:nowrap}
+:root:not([data-theme=classic]) .classic-only{display:none!important}
+:root[data-theme=classic] .counts{display:none}
+.credit{padding-left:12px;font-size:11px;letter-spacing:.04em;color:var(--credit-color);user-select:none;pointer-events:none;white-space:nowrap}
 :root[data-theme=classic] #text{padding:2px}
 :root[data-theme=classic] .toolbar{display:block;font:15px Helvetica,"Helvetica Neue",Arial,sans-serif;color:#000}
 :root[data-theme=classic] .toolbar>*{vertical-align:middle}
@@ -59,7 +62,7 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
 #text{font-size:16px;padding:8px;border-bottom:var(--editor-border)}
 .toolbar a.icon{width:34px;height:34px;font-size:16px}
 .dd>a.q{padding:8px 10px}
-.credit{font-size:10px;padding-left:8px}
+.credit,.counts{font-size:10px}.credit{padding-left:8px}
 .menu,:root[data-theme=classic] .menu{top:calc(100% + 8px);bottom:auto}
 .menu a.q,.theme-opt{padding:8px}
 :root[data-theme=classic] .toolbar{padding-top:calc(6px + env(safe-area-inset-top,0px))}
@@ -71,9 +74,9 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
 <textarea id="text" name="text" spellcheck="true">Welcome to Online Text Editor - your online plain text editor. Enter or paste your text here. To download and save it, click on the button below.</textarea>
 <div class="toolbar">
 <input type="button" class="btn" value="Download &amp; Save" title="Download &amp; Save" data-a="download">
-<a class="q icon" href="#" title="Scroll to Top" data-a="top">&uarr;</a>
-<a class="q icon" href="#" title="Scroll to Bottom" data-a="bottom">&darr;</a>
-<span class="dd">
+<a class="q icon classic-only" href="#" title="Scroll to Top" data-a="top">&uarr;</a>
+<a class="q icon classic-only" href="#" title="Scroll to Bottom" data-a="bottom">&darr;</a>
+<span class="dd classic-only">
 <a class="q" href="#" rel="nofollow" title="More Options" data-a="menu" data-m="more-menu">more&nbsp;&raquo;</a>
 <span class="menu" id="more-menu">
 <a class="q" href="#" title="Word Count" data-a="words">Word Count</a>
@@ -91,17 +94,33 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
 <button type="button" class="theme-opt" data-theme-opt="classic">Classic</button>
 </span>
 </span>
+<span class="counts" id="counts"></span>
 <span class="credit">Revived by InsanityGames</span>
 </div>
 </form>
 <script>
 (function () {
-  var doc = document, root = doc.documentElement, ta = doc.getElementById('text');
+  var doc = document, root = doc.documentElement;
+  var ta = doc.getElementById('text'), counts = doc.getElementById('counts');
   var defaultText = ta.value;
 
+  /* ---------- Menus / actions ---------- */
   function closeMenus() {
     var m = doc.querySelectorAll('.menu.open');
     for (var i = 0; i < m.length; i++) m[i].classList.remove('open');
+  }
+
+  function isWs(c) {
+    return c <= 32 || c === 160 || c === 0x1680 || (c >= 0x2000 && c <= 0x200a) ||
+           c === 0x2028 || c === 0x2029 || c === 0x202f || c === 0x205f || c === 0x3000 || c === 0xfeff;
+  }
+  function wordCount(v) {
+    var n = 0, inW = false;
+    for (var i = 0, l = v.length; i < l; i++) {
+      if (isWs(v.charCodeAt(i))) inW = false;
+      else if (!inW) { inW = true; n++; }
+    }
+    return n;
   }
 
   function download() {
@@ -125,12 +144,11 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     download: download,
     top: function () { ta.scrollTop = 0; },
     bottom: function () { ta.scrollTop = ta.scrollHeight; },
-    words: function () { var t = ta.value.trim(); alert('Words: ' + (t ? t.split(/\s+/).length : 0)); },
+    words: function () { alert('Words: ' + wordCount(ta.value)); },
     chars: function () { alert('Characters: ' + ta.value.length); },
     popup: popup
   };
 
-  /* Single delegated click handler */
   doc.addEventListener('click', function (e) {
     var el = e.target.closest('[data-a],[data-theme-opt]');
     if (!el) { if (!e.target.closest('.dd')) closeMenus(); return; }
@@ -146,31 +164,97 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     if (actions[a]) { actions[a](); if (a === 'words' || a === 'chars' || a === 'popup') closeMenus(); }
   });
 
-  /* Clear the welcome text on first click, only if it's still untouched */
-  ta.addEventListener('click', function clear() {
-    if (ta.value === defaultText) ta.value = '';
-    ta.removeEventListener('click', clear);
-  });
-
-  /* Insert text through the browser's editing pipeline so the undo stack survives */
-  function insertText(text) {
-    if (!doc.execCommand('insertText', false, text)) {
-      ta.setRangeText(text, ta.selectionStart, ta.selectionEnd, 'end');
-      ta.dispatchEvent(new Event('input', { bubbles: true }));
-    }
+  /* ---------- Live counts (non-classic themes only) ---------- */
+  var countRaf = 0;
+  function renderCounts() {
+    countRaf = 0;
+    var v = ta.value, w = wordCount(v), c = v.length;
+    counts.textContent = w + (w === 1 ? ' word' : ' words') + ' \u00b7 ' + c + (c === 1 ? ' character' : ' characters');
   }
+  function updateCounts() {
+    if (root.getAttribute('data-theme') === 'classic' || countRaf) return;
+    countRaf = requestAnimationFrame(renderCounts);
+  }
+
+  /* ---------- Undo / redo (own history, so it never breaks) ---------- */
+  var hist = [], idx = 0, lastKey = '', lastTime = 0, preSel = false, pendType = '', pendData = null;
+
+  function snap() { return { v: ta.value, s: ta.selectionStart, e: ta.selectionEnd }; }
+  function resetHist() { hist = [snap()]; idx = 0; lastKey = ''; }
+
+  function keyFor(type, data) {
+    if (type === 'insertText' && (!data || data.length === 1)) return 'ins';
+    if (type === 'deleteContentBackward') return 'delB';
+    if (type === 'deleteContentForward') return 'delF';
+    return '';
+  }
+
+  function record(key) {
+    var st = snap(), top = hist[idx];
+    if (st.v === top.v) { top.s = st.s; top.e = st.e; return; }
+    var now = Date.now();
+    if (key && key === lastKey && !preSel && idx > 0 && idx === hist.length - 1 && now - lastTime < 1000) {
+      hist[idx] = st;                       /* extend the current typing/deleting group */
+    } else {
+      hist.length = idx + 1;                /* drop redo branch */
+      hist.push(st); idx++;
+      var max = Math.max(50, Math.min(1000, Math.floor(5e7 / (st.v.length || 1))));
+      if (hist.length > max) { hist.splice(0, hist.length - max); idx = hist.length - 1; }
+    }
+    lastKey = key; lastTime = now;
+  }
+
+  function apply(st) {
+    ta.value = st.v;
+    ta.setSelectionRange(st.s, st.e);
+    lastKey = '';
+    updateCounts();
+  }
+  function undo() { if (idx > 0) apply(hist[--idx]); }
+  function redo() { if (idx < hist.length - 1) apply(hist[++idx]); }
+
+  ta.addEventListener('beforeinput', function (e) {
+    var t = e.inputType;
+    if (t === 'historyUndo') { e.preventDefault(); undo(); return; }
+    if (t === 'historyRedo') { e.preventDefault(); redo(); return; }
+    preSel = ta.selectionStart !== ta.selectionEnd;
+    pendType = t; pendData = e.data;
+  });
+  ta.addEventListener('input', function (e) {
+    if (!e.isComposing) record(keyFor(pendType, pendData));
+    pendType = ''; pendData = null;
+    updateCounts();
+  });
+  ta.addEventListener('compositionend', function () { record(''); updateCounts(); });
 
   ta.addEventListener('keydown', function (e) {
     var k = e.key;
-    if (k === 'Tab') { e.preventDefault(); insertText('\t'); return; }
+    if (k === 'Tab') {
+      e.preventDefault();
+      ta.setRangeText('\t', ta.selectionStart, ta.selectionEnd, 'end');
+      record(''); updateCounts();
+      return;
+    }
     if ((e.ctrlKey || e.metaKey) && !e.altKey && k.length === 1) {
       var l = k.toLowerCase();
-      /* Ctrl+Y and Ctrl+Shift+Z both redo */
-      if (l === 'y' || (l === 'z' && e.shiftKey)) { e.preventDefault(); doc.execCommand('redo'); }
+      if (l === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+      else if (l === 'y' || (l === 'z' && e.shiftKey)) { e.preventDefault(); redo(); }
+      return;
     }
+    /* moving the caret ends the current typing group */
+    if (k.length > 1 && k !== 'Backspace' && k !== 'Delete' && k !== 'Shift' && k !== 'Control' && k !== 'Meta' && k !== 'Alt') lastKey = '';
+  });
+  ta.addEventListener('mousedown', function () { lastKey = ''; });
+
+  /* Clear the welcome text on first click, only if untouched */
+  ta.addEventListener('click', function clear() {
+    if (ta.value === defaultText) { ta.value = ''; resetHist(); updateCounts(); }
+    ta.removeEventListener('click', clear);
   });
 
-  /* Theme */
+  resetHist();
+
+  /* ---------- Theme ---------- */
   var opts = doc.querySelectorAll('.theme-opt');
   function markTheme(name) {
     for (var i = 0; i < opts.length; i++)
@@ -180,17 +264,16 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     root.setAttribute('data-theme', name);
     try { localStorage.setItem('ote-theme', name); } catch (e) {}
     markTheme(name);
+    updateCounts();
   }
   markTheme(root.getAttribute('data-theme') || 'light');
+  updateCounts();
 
-  /* Mobile: keyboard-aware height */
+  /* ---------- Mobile: keyboard-aware height ---------- */
   var vv = window.visualViewport;
   if (vv) {
     var raf = 0;
-    var setVvh = function () {
-      raf = 0;
-      root.style.setProperty('--vvh', vv.height + 'px');
-    };
+    var setVvh = function () { raf = 0; root.style.setProperty('--vvh', vv.height + 'px'); };
     var sched = function () { if (!raf) raf = requestAnimationFrame(setVvh); };
     vv.addEventListener('resize', sched);
     vv.addEventListener('scroll', sched);
