@@ -40,6 +40,11 @@ form{display:flex;flex-direction:column;height:100%;margin:0}
 :root:not([data-theme=classic]) .classic-only{display:none!important}
 :root[data-theme=classic] .counts{display:none}
 .credit{padding-left:12px;font-size:11px;letter-spacing:.04em;color:var(--credit-color);user-select:none;pointer-events:none;white-space:nowrap}
+
+.menu-close{display:none}
+:root[data-theme=classic] .menu-close{display:inline}
+:root[data-theme=classic] .menu-close img{display:inline;vertical-align:top;border:0}
+
 :root[data-theme=classic] #text{padding:2px;font:13.3333px monospace}
 :root[data-theme=classic] .toolbar{display:block;font-family:inherit;font-size:inherit}
 :root[data-theme=classic] .toolbar>*+*{margin-left:4px}
@@ -48,10 +53,10 @@ form{display:flex;flex-direction:column;height:100%;margin:0}
 :root[data-theme=classic] .toolbar a.icon{display:inline;width:auto;height:auto;font-size:inherit;line-height:normal;padding:0;text-decoration:none}
 :root[data-theme=classic] .dd>a.q{padding:0}
 :root[data-theme=classic] .menu{right:0;bottom:130%;width:16ex;min-width:0;line-height:1.9;padding:0 0 .5ex .8ex;border-radius:0;box-shadow:none;font-family:inherit;font-size:inherit}
-:root[data-theme=classic] .menu a.q,:root[data-theme=classic] .theme-opt{display:block;padding:0;color:#00e;font-weight:400;background:transparent;text-decoration:underline}
+:root[data-theme=classic] .menu a.q,
+:root[data-theme=classic] .theme-opt{display:block;padding:0;color:#00e;font-weight:400;background:transparent;text-decoration:underline}
 :root[data-theme=classic] .copy-cut{display:block}
 :root[data-theme=classic] .copy-cut a.q{display:inline;width:auto}
-:root[data-theme=classic] .menu-close{position:absolute;top:0;right:0;width:16px;height:16px;padding:0;border:0;background:transparent;color:#000;font:bold 14px/16px Arial,sans-serif;text-align:center;cursor:pointer}
 :root[data-theme=classic] .theme-opt[aria-pressed=true]{font-weight:700}
 :root[data-theme=classic] .theme-opt::after{content:"";width:auto}
 :root[data-theme=classic] .theme-opt[aria-pressed=true]::after{content:" \2713"}
@@ -82,8 +87,8 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
 <span class="dd classic-only">
 <a class="q" href="#" rel="nofollow" title="More Options" data-a="menu" data-m="more-menu">more&nbsp;&raquo;</a>
 <span class="menu" id="more-menu">
-<button type="button" class="menu-close classic-only" aria-label="Close menu" title="Close menu" data-a="close-menu">&times;</button>
-<div class="copy-cut classic-only"><a class="q" href="#" title="Copy to Clipboard" data-a="copy">Copy</a> or <a class="q" href="#" title="Cut to Clipboard" data-a="cut">Cut</a></div>
+<a href="#" class="menu-close" data-a="close-menu" title="Close"><img border="0" src="https://web.archive.org/web/20251231173911im_/https://www.onlinetexteditor.com/images/x2.gif" width="12" height="12" alt="Close menu" align="right" class="cb"></a>
+<div class="copy-cut"><a class="q" href="#" title="Copy to Clipboard" data-a="copy">Copy</a> or <a class="q" href="#" title="Cut to Clipboard" data-a="cut">Cut</a></div>
 <a class="q" href="#" title="Word Count" data-a="words">Word Count</a>
 <a class="q" href="#" title="Character Count" data-a="chars">Character Count</a>
 <a class="q" href="#" title="Open As PopUp" data-a="popup">Open As PopUp</a>
@@ -93,6 +98,7 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
 <span class="dd">
 <a class="q" href="#" rel="nofollow" title="Theme" data-a="menu" data-m="theme-menu">theme&nbsp;&raquo;</a>
 <span class="menu" id="theme-menu">
+<a href="#" class="menu-close" data-a="close-menu" title="Close"><img border="0" src="https://web.archive.org/web/20251231173911im_/https://www.onlinetexteditor.com/images/x2.gif" width="12" height="12" alt="Close menu" align="right" class="cb"></a>
 <button type="button" class="theme-opt" data-theme-opt="dark">Dark</button>
 <button type="button" class="theme-opt" data-theme-opt="dark-footer">Dark footer</button>
 <button type="button" class="theme-opt" data-theme-opt="light">Light</button>
@@ -109,7 +115,6 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
   var ta = doc.getElementById('text'), counts = doc.getElementById('counts');
   var defaultText = ta.value;
 
-  /* ---------- Menus / actions ---------- */
   function closeMenus() {
     var m = doc.querySelectorAll('.menu.open');
     for (var i = 0; i < m.length; i++) m[i].classList.remove('open');
@@ -145,12 +150,29 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     t.value = ta.value; t.focus();
   }
 
+  /* Classic-mode popup text — best guess at the original func.js wording.
+     If you can paste func.js, replace these strings verbatim. */
+  function classicWordsMsg(n) {
+    return 'This text contains ' + n + ' word' + (n === 1 ? '' : 's') + '.';
+  }
+  function classicCharsMsg(n) {
+    return 'This text contains ' + n + ' character' + (n === 1 ? '' : 's') + '.';
+  }
+
   var actions = {
     download: download,
     top: function () { ta.scrollTop = 0; },
     bottom: function () { ta.scrollTop = ta.scrollHeight; },
-    words: function () { alert('Words: ' + wordCount(ta.value)); },
-    chars: function () { alert('Characters: ' + ta.value.length); },
+    words: function () {
+      var n = wordCount(ta.value);
+      if (root.getAttribute('data-theme') === 'classic') alert(classicWordsMsg(n));
+      else alert('Words: ' + n);
+    },
+    chars: function () {
+      var n = ta.value.length;
+      if (root.getAttribute('data-theme') === 'classic') alert(classicCharsMsg(n));
+      else alert('Characters: ' + n);
+    },
     popup: popup,
     copy: function () {
       var s = ta.selectionStart, e = ta.selectionEnd;
@@ -186,13 +208,11 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     if (actions[a]) { actions[a](); if (a === 'words' || a === 'chars' || a === 'popup' || a === 'copy' || a === 'cut') closeMenus(); }
   });
 
-  /* Hide Copy / Cut on Mac (execCommand copy/cut unreliable there) */
   if (/Mac|iPhone|iPod|iPad/i.test(navigator.platform || navigator.userAgent || '')) {
     var cc = doc.querySelectorAll('.copy-cut');
     for (var i = 0; i < cc.length; i++) cc[i].style.display = 'none';
   }
 
-  /* ---------- Live counts (non-classic themes only) ---------- */
   var countRaf = 0;
   function renderCounts() {
     countRaf = 0;
@@ -204,7 +224,6 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     countRaf = requestAnimationFrame(renderCounts);
   }
 
-  /* ---------- Undo / redo (own history, so it never breaks) ---------- */
   var hist = [], idx = 0, lastKey = '', lastTime = 0, preSel = false, pendType = '', pendData = null;
 
   function snap() { return { v: ta.value, s: ta.selectionStart, e: ta.selectionEnd }; }
@@ -280,7 +299,6 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
 
   resetHist();
 
-  /* ---------- Theme ---------- */
   var opts = doc.querySelectorAll('.theme-opt');
   function markTheme(name) {
     for (var i = 0; i < opts.length; i++)
@@ -295,7 +313,6 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
   markTheme(root.getAttribute('data-theme') || 'light');
   updateCounts();
 
-  /* ---------- Mobile: keyboard-aware height ---------- */
   var vv = window.visualViewport;
   if (vv) {
     var raf = 0;
