@@ -38,6 +38,7 @@ form{display:flex;flex-direction:column;height:100%;margin:0}
 .theme-opt[aria-pressed=true]::after{content:"\2713";opacity:.7}
 .counts{margin-left:auto;font-size:11px;letter-spacing:.04em;color:var(--credit-color);user-select:none;white-space:nowrap}
 :root:not([data-theme=classic]) .classic-only{display:none!important}
+:root[data-theme=classic] .non-classic{display:none!important}
 :root[data-theme=classic] .counts{display:none}
 .credit{padding-left:12px;font-size:11px;letter-spacing:.04em;color:var(--credit-color);user-select:none;pointer-events:none;white-space:nowrap}
 
@@ -81,7 +82,9 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
 <form id="textform" onsubmit="return false">
 <textarea id="text" name="text" spellcheck="true">Welcome to Online Text Editor - your online plain text editor. Enter or paste your text here. To download and save it, click on the button below.</textarea>
 <div class="toolbar">
-<input type="button" class="btn" value="Download &amp; Save" title="Download &amp; Save (Ctrl+S)" data-a="download">
+<input type="button" class="btn classic-only" value="Download &amp; Save" title="Download &amp; Save" data-a="download">
+<input type="button" class="btn non-classic" value="Export" title="Export (Ctrl+S)" data-a="download">
+<input type="button" class="btn non-classic" value="Import" title="Import a text file" data-a="import">
 <a class="q icon classic-only" href="#" title="Scroll to Top" data-a="top">&uarr;</a>
 <a class="q icon classic-only" href="#" title="Scroll to Bottom" data-a="bottom">&darr;</a>
 <span class="dd classic-only">
@@ -108,11 +111,13 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
 <span class="counts" id="counts"></span>
 <span class="credit">Revived by InsanityGames</span>
 </div>
+<input type="file" id="fileInput" accept=".txt,.text,.md,.markdown,.csv,.tsv,.log,.json,.xml,.html,.htm,.css,.js,.mjs,.ts,.tsx,.jsx,.ini,.cfg,.conf,.yaml,.yml,.toml,.env,.sh,.bat,.py,.rb,.java,.c,.cpp,.h,.go,.rs,.php,.sql,text/*,application/json,application/xml,application/javascript" hidden>
 </form>
 <script>
 (function () {
   var doc = document, root = doc.documentElement;
   var ta = doc.getElementById('text'), counts = doc.getElementById('counts');
+  var fileInput = doc.getElementById('fileInput');
   var defaultText = ta.value;
 
   function closeMenus() {
@@ -148,6 +153,30 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     w.document.close();
     var t = w.document.getElementById('t');
     t.value = ta.value; t.focus();
+  }
+
+  // Fast file read: prefer Blob.prototype.text() (promise-based, UTF-8, strips BOM),
+  // fall back to FileReader for older browsers.
+  function importFromFile(file) {
+    if (!file) return;
+    function done(text) {
+      ta.value = text;
+      ta.setSelectionRange(0, 0);
+      resetHist();
+      updateCounts();
+      ta.focus();
+    }
+    function fail(err) {
+      alert('Could not read the file' + (err && err.message ? ': ' + err.message : '.'));
+    }
+    if (file.text) {
+      file.text().then(done, fail);
+    } else {
+      var fr = new FileReader();
+      fr.onload = function () { done(fr.result); };
+      fr.onerror = function () { fail(fr.error); };
+      fr.readAsText(file);
+    }
   }
 
   var actions = {
@@ -190,8 +219,17 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
       else ta.setSelectionRange(s, e);
       ta.focus();
     },
+    'import': function () {
+      fileInput.value = '';
+      fileInput.click();
+    },
     'close-menu': function () { closeMenus(); }
   };
+
+  fileInput.addEventListener('change', function () {
+    var f = fileInput.files && fileInput.files[0];
+    if (f) importFromFile(f);
+  });
 
   doc.addEventListener('click', function (e) {
     var el = e.target.closest('[data-a],[data-theme-opt]');
@@ -208,7 +246,7 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     if (actions[a]) { actions[a](); if (a === 'words' || a === 'chars' || a === 'popup' || a === 'copy' || a === 'cut') closeMenus(); }
   });
 
-  // Ctrl/Cmd + S == "Download & Save" button
+  // Ctrl/Cmd + S == Export (download the current text as .txt)
   doc.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 's' || e.key === 'S')) {
       e.preventDefault();
