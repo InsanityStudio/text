@@ -81,7 +81,7 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
 <form id="textform" onsubmit="return false">
 <textarea id="text" name="text" spellcheck="true">Welcome to Online Text Editor - your online plain text editor. Enter or paste your text here. To download and save it, click on the button below.</textarea>
 <div class="toolbar">
-<input type="button" class="btn" value="Download &amp; Save" title="Download &amp; Save" data-a="download">
+<input type="button" class="btn" value="Download &amp; Save" title="Download &amp; Save (Ctrl+S)" data-a="download">
 <a class="q icon classic-only" href="#" title="Scroll to Top" data-a="top">&uarr;</a>
 <a class="q icon classic-only" href="#" title="Scroll to Bottom" data-a="bottom">&darr;</a>
 <span class="dd classic-only">
@@ -206,6 +206,14 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
       return;
     }
     if (actions[a]) { actions[a](); if (a === 'words' || a === 'chars' || a === 'popup' || a === 'copy' || a === 'cut') closeMenus(); }
+  });
+
+  // Ctrl/Cmd + S == "Download & Save" button
+  doc.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 's' || e.key === 'S')) {
+      e.preventDefault();
+      download();
+    }
   });
 
   if (/Mac|iPhone|iPod|iPad/i.test(navigator.platform || navigator.userAgent || '')) {
