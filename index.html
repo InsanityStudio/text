@@ -150,28 +150,28 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     t.value = ta.value; t.focus();
   }
 
-  /* Classic-mode popup text — best guess at the original func.js wording.
-     If you can paste func.js, replace these strings verbatim. */
-  function classicWordsMsg(n) {
-    return 'This text contains ' + n + ' word' + (n === 1 ? '' : 's') + '.';
-  }
-  function classicCharsMsg(n) {
-    return 'This text contains ' + n + ' character' + (n === 1 ? '' : 's') + '.';
-  }
-
   var actions = {
     download: download,
     top: function () { ta.scrollTop = 0; },
     bottom: function () { ta.scrollTop = ta.scrollHeight; },
+    /* Classic theme reproduces the original func.js verbatim:
+       word count = value.split(" ").length (naive, inflates on repeated spaces),
+       char count = value.length (includes whitespace). */
     words: function () {
-      var n = wordCount(ta.value);
-      if (root.getAttribute('data-theme') === 'classic') alert(classicWordsMsg(n));
-      else alert('Words: ' + n);
+      if (root.getAttribute('data-theme') === 'classic') {
+        var n = ta.value.split(" ").length;
+        alert("Word Count:\n\nYour document contains about\n\n" + n + " Words");
+      } else {
+        alert('Words: ' + wordCount(ta.value));
+      }
     },
     chars: function () {
       var n = ta.value.length;
-      if (root.getAttribute('data-theme') === 'classic') alert(classicCharsMsg(n));
-      else alert('Characters: ' + n);
+      if (root.getAttribute('data-theme') === 'classic') {
+        alert("Character Count:\n\nYour document contains about\n\n" + n + " Characters (including whitespace)");
+      } else {
+        alert('Characters: ' + n);
+      }
     },
     popup: popup,
     copy: function () {
