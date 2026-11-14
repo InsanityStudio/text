@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="custom" data-editor="parchment" data-footer="parchment">
+<html lang="en" data-theme="custom" data-editor="parchment" data-footer="parchment" data-font="mono">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -24,6 +24,14 @@
   } else {
     r.setAttribute('data-theme', 'custom');
     r.setAttribute('data-editor', s.editor === 'light' || s.editor === 'dark' ? s.editor : 'parchment');
+    r.setAttribute('data-font', s.font || 'mono');
+    if (s.font === 'custom' && s.customFont) {
+      r.style.setProperty('--editor-font', '"' + s.customFont.replace(/[^A-Za-z0-9 \-]/g, '') + '", ui-monospace, monospace');
+    }
+    var sn = parseInt(s.size, 10);
+    if (!isNaN(sn) && sn >= 8 && sn <= 72) {
+      r.style.setProperty('--editor-font-size', sn + 'px');
+    }
     var ef = s.sameFooter === false ? (s.footer || 'light') : (s.editor || 'parchment');
     if (ef !== 'light' && ef !== 'dark') ef = 'parchment';
     r.setAttribute('data-footer', ef);
@@ -36,6 +44,14 @@
 :root[data-editor=parchment]{--bg:#fff;--page-color:#000;--editor-bg:#eee8aa;--editor-border:1px dotted #000;--editor-border-bottom:1px dotted #000;--editor-color:#000}
 :root[data-editor=light]{--bg:#fff;--page-color:#000;--editor-bg:#fff;--editor-border:1px solid #cfcfcf;--editor-border-bottom:0;--editor-color:#000}
 :root[data-editor=dark]{--bg:#18191c;--page-color:#e0e0e0;--editor-bg:#1e1f22;--editor-border:1px solid #3a3b3f;--editor-border-bottom:0;--editor-color:#e8e8e8}
+/* Editor font */
+:root[data-font=mono]{--editor-font:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+:root[data-font=sans]{--editor-font:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+:root[data-font=serif]{--editor-font:Georgia,"Times New Roman",Times,serif}
+:root[data-font=courier]{--editor-font:"Courier New",Courier,monospace}
+:root[data-font=consolas]{--editor-font:Consolas,"Lucida Console",Monaco,monospace}
+:root[data-font=helvetica]{--editor-font:"Helvetica Neue",Helvetica,Arial,sans-serif}
+:root[data-font=custom]{--editor-font:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
 /* Footer/menu palettes (parchment is a darker eee8aa with matching parchment menu) */
 :root[data-footer=parchment]{--bar-bg:#e2dc9c;--bar-border-top:1px solid #cfc87e;--bar-color:#222;--btn-bg:#f3edba;--btn-border:1px solid #c9c184;--btn-color:#222;--btn-hover-bg:#ece5a6;--btn-hover-border:#b3aa63;--link-color:#3b3421;--link-hover-bg:#d7d08c;--menu-bg:#e8e1a4;--menu-border:1px solid #bdb56f;--menu-color:#222;--menu-hover-bg:#ddd590;--credit-color:#6e6844;--focus:#7aa7ff}
 :root[data-footer=light]{--bar-bg:#f7f7f7;--bar-border-top:1px solid #e3e3e3;--bar-color:#222;--btn-bg:#fff;--btn-border:1px solid #cfcfcf;--btn-color:#222;--btn-hover-bg:#f0f0f0;--btn-hover-border:#b9b9b9;--link-color:#333;--link-hover-bg:#e9e9e9;--menu-bg:#fff;--menu-border:1px solid #dcdcdc;--menu-color:#333;--menu-hover-bg:#f0f0f0;--credit-color:#8a8a8a;--focus:#7aa7ff}
@@ -43,9 +59,11 @@
 :root[data-theme=classic]{--bg:#fff;--page-color:#000;--editor-bg:#eee8aa;--editor-border:1px dotted #000;--editor-border-bottom:1px dotted #000;--editor-color:#000;--bar-bg:transparent;--bar-border-top:0;--bar-color:#000;--bar-padding:0 4px 16px;--bar-gap:0;--link-color:#00e;--link-hover-bg:transparent;--icon-radius:0;--menu-bg:#fff;--menu-border:1px solid #369;--menu-radius:0;--menu-shadow:none;--menu-color:#000;--menu-hover-bg:transparent;--menu-item-padding:0;--menu-item-radius:0;--credit-color:#000;--focus:#00e}
 html,body{height:100%;margin:0}
 @supports (height:100dvh){html,body{height:100dvh}}
-body{background:var(--bg);color:var(--page-color);overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%;transition:background-color .2s,color .2s}
+body{background:var(--bg);color:var(--page-color);overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%;transition:background-color .2s,color .2s;color-scheme:light}
+:root[data-editor=dark] #text{color-scheme:dark}
+:root[data-footer=dark] .toolbar,:root[data-footer=dark] .menu{color-scheme:dark}
 form{display:flex;flex-direction:column;height:100%;margin:0}
-#text{flex:1 1 auto;width:100%;box-sizing:border-box;margin:0;padding:4px;resize:none;background:var(--editor-bg);border:var(--editor-border);border-bottom:var(--editor-border-bottom);color:var(--editor-color);font:14px monospace;transition:background-color .2s,color .2s,border-color .2s}
+#text{flex:1 1 auto;width:100%;box-sizing:border-box;margin:0;padding:4px;resize:none;background:var(--editor-bg);border:var(--editor-border);border-bottom:var(--editor-border-bottom);color:var(--editor-color);font-family:var(--editor-font,ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace);font-size:var(--editor-font-size,14px);transition:background-color .2s,color .2s,border-color .2s}
 #text:focus{outline:0}
 .toolbar{display:flex;align-items:center;gap:var(--bar-gap);padding:var(--bar-padding);background:var(--bar-bg);border-top:var(--bar-border-top);font-family:var(--bar-font);font-size:var(--bar-font-size);color:var(--bar-color);touch-action:manipulation;transition:background-color .2s,border-color .2s}
 .toolbar .btn{font:inherit;padding:var(--btn-padding);border:var(--btn-border);border-radius:var(--btn-radius);background:var(--btn-bg);color:var(--btn-color);cursor:pointer;transition:background .15s,border-color .15s}
@@ -57,7 +75,7 @@ form{display:flex;flex-direction:column;height:100%;margin:0}
 .toolbar a.q:focus-visible,.toolbar .btn:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .dd{position:relative;display:inline-block}
 .dd>a.q{display:inline-block;padding:5px 8px}
-.menu{display:none;position:absolute;right:0;bottom:calc(100% + 8px);background:var(--menu-bg);border:var(--menu-border);border-radius:var(--menu-radius);box-shadow:var(--menu-shadow);padding:6px;min-width:160px;white-space:nowrap;text-align:left;z-index:1000;font-family:var(--bar-font);font-size:var(--bar-font-size);color:var(--menu-color)}
+.menu{display:none;position:absolute;right:0;bottom:calc(100% + 8px);background:var(--menu-bg);border:var(--menu-border);border-radius:var(--menu-radius);box-shadow:var(--menu-shadow);padding:6px;min-width:160px;max-width:calc(100vw - 12px);white-space:nowrap;text-align:left;z-index:1000;font-family:var(--bar-font);font-size:var(--bar-font-size);color:var(--menu-color)}
 .menu.open{display:block}
 .menu a.q,.theme-opt{display:block;width:100%;box-sizing:border-box;padding:var(--menu-item-padding);border:0;border-radius:var(--menu-item-radius);background:transparent;color:var(--menu-color);font:inherit;text-align:left;cursor:pointer}
 .menu a.q:hover,.theme-opt:hover{background:var(--menu-hover-bg)}
@@ -72,7 +90,7 @@ form{display:flex;flex-direction:column;height:100%;margin:0}
 .credit{padding-left:12px;font-size:11px;letter-spacing:.04em;color:var(--credit-color);user-select:none;pointer-events:none;white-space:nowrap}
 
 /* Theme settings panel (custom theme only) */
-.tp{min-width:210px}
+.tp{width:220px;max-width:100%;box-sizing:border-box}
 .tp-group{margin:0 0 7px}
 .tp-group:last-child{margin:0}
 .tp-group[hidden]{display:none!important}
@@ -84,6 +102,22 @@ form{display:flex;flex-direction:column;height:100%;margin:0}
 .tp-opt:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
 .tp-check{display:flex;align-items:center;gap:6px;padding:2px;cursor:pointer;user-select:none}
 .tp-check input{accent-color:var(--focus);margin:0}
+.tp-select{display:block;width:100%;box-sizing:border-box;padding:5px 8px;border:var(--btn-border);border-radius:var(--btn-radius);background:var(--btn-bg);color:var(--btn-color);font:inherit;cursor:pointer}
+.tp-select:hover{background:var(--btn-hover-bg);border-color:var(--btn-hover-border)}
+.tp-select:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+.tp-input{display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:5px 8px;border:var(--btn-border);border-radius:var(--btn-radius);background:var(--btn-bg);color:var(--btn-color);font:inherit}
+.tp-input[hidden]{display:none!important}
+.tp-input:hover{background:var(--btn-hover-bg);border-color:var(--btn-hover-border)}
+.tp-input:focus-visible{outline:2px solid var(--focus);outline-offset:1px}
+/* Font row: narrow font select + narrow typable size */
+.tp-row{display:flex;align-items:stretch;gap:5px}
+.tp-row .tp-select{flex:1 1 0%;width:auto;min-width:0}
+.tp-size-wrap{display:flex;align-items:center;flex:0 0 auto;border:var(--btn-border);border-radius:var(--btn-radius);background:var(--btn-bg);transition:background .15s,border-color .15s}
+.tp-size-wrap:hover{background:var(--btn-hover-bg);border-color:var(--btn-hover-border)}
+.tp-size-wrap:focus-within{outline:2px solid var(--focus);outline-offset:1px}
+.tp-size{width:38px;box-sizing:border-box;padding:5px 4px;border:0;background:transparent;color:var(--btn-color);font:inherit;text-align:center;appearance:textfield;-moz-appearance:textfield}
+.tp-size::-webkit-outer-spin-button,.tp-size::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.tp-size:focus{outline:0}
 
 .menu-close{display:none}
 :root[data-theme=classic] .menu-close{display:inline}
@@ -109,12 +143,14 @@ form{display:flex;flex-direction:column;height:100%;margin:0}
 @media (max-width:640px){
 form{flex-direction:column-reverse;height:var(--vvh,100%)}
 .toolbar{flex-wrap:wrap;row-gap:4px;border-top:0;padding-top:calc(7px + env(safe-area-inset-top,0px))}
-#text{font-size:16px;padding:8px;border-bottom:var(--editor-border)}
+#text{font-size:var(--editor-font-size,16px);padding:8px;border-bottom:var(--editor-border)}
 .toolbar a.icon{width:34px;height:34px;font-size:16px}
 .dd>a.q{padding:8px 10px}
 .credit,.counts{font-size:10px}.credit{padding-left:8px}
 .menu,:root[data-theme=classic] .menu{top:calc(100% + 8px);bottom:auto}
 .menu a.q,.theme-opt,.tp-opt{padding:8px}
+.tp-select,.tp-input{padding:7px 8px}
+.tp-size{width:36px;padding:7px 4px}
 :root[data-theme=classic] #text{font-size:16px;padding:8px}
 :root[data-theme=classic] .toolbar{padding-top:calc(6px + env(safe-area-inset-top,0px));padding-bottom:0}
 :root[data-theme=classic] .menu a.q,:root[data-theme=classic] .theme-opt{padding:8px}
@@ -160,6 +196,22 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
 <button type="button" class="tp-opt" data-editor-opt="dark">Dark</button>
 </div>
 <div class="tp-group">
+<div class="tp-label">Font</div>
+<div class="tp-row">
+<select class="tp-select" id="fontSelect" aria-label="Editor font">
+<option value="mono">Monospace</option>
+<option value="sans">Sans-serif</option>
+<option value="serif">Serif</option>
+<option value="courier">Courier</option>
+<option value="consolas">Consolas</option>
+<option value="helvetica">Helvetica</option>
+<option value="custom">Custom (Google Fonts)</option>
+</select>
+<span class="tp-size-wrap"><input type="number" class="tp-size" id="sizeInput" min="8" max="72" step="1" inputmode="numeric" placeholder="auto" aria-label="Font size in pixels (empty for default)" title="Font size in px (empty = default)"></span>
+</div>
+<input type="text" class="tp-input" id="customFontInput" placeholder="Google Font name, e.g. Roboto" hidden>
+</div>
+<div class="tp-group">
 <label class="tp-check"><input type="checkbox" id="sameFooter" checked> Menu matches editor</label>
 </div>
 <div class="tp-group" id="footerGroup" hidden>
@@ -183,10 +235,59 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
   var fileInput = doc.getElementById('fileInput');
   var defaultText = ta.value;
   var SETTINGS_KEY = 'ote-settings';
+  var FONTS = ['mono','sans','serif','courier','consolas','helvetica','custom'];
 
   function closeMenus() {
     var m = doc.querySelectorAll('.menu.open');
     for (var i = 0; i < m.length; i++) m[i].classList.remove('open');
+  }
+
+  /* Position an open menu so it stays fully inside the viewport. */
+  function positionMenu(m) {
+    var margin = 8;
+    m.style.left = '';
+    m.style.right = '';
+    m.style.top = '';
+    m.style.bottom = '';
+    m.style.maxWidth = '';
+    m.style.maxHeight = '';
+    m.style.overflowY = '';
+
+    var dd = m.parentElement;
+    if (!dd) return;
+    var ddRect = dd.getBoundingClientRect();
+    var vw = window.innerWidth || doc.documentElement.clientWidth;
+    var vh = window.innerHeight || doc.documentElement.clientHeight;
+
+    var maxW = Math.max(160, vw - margin * 2);
+    var rect = m.getBoundingClientRect();
+    if (rect.width > maxW) {
+      m.style.maxWidth = maxW + 'px';
+      rect = m.getBoundingClientRect();
+    }
+
+    if (rect.left < margin) {
+      m.style.right = 'auto';
+      m.style.left = (margin - ddRect.left) + 'px';
+    } else if (rect.right > vw - margin) {
+      m.style.left = 'auto';
+      m.style.right = (ddRect.right - (vw - margin)) + 'px';
+    }
+
+    rect = m.getBoundingClientRect();
+    if (rect.top < margin) {
+      m.style.bottom = 'auto';
+      m.style.top = (margin - ddRect.top) + 'px';
+    } else if (rect.bottom > vh - margin) {
+      m.style.top = 'auto';
+      m.style.bottom = (ddRect.bottom - (vh - margin)) + 'px';
+    }
+
+    rect = m.getBoundingClientRect();
+    if (rect.height > vh - margin * 2) {
+      m.style.maxHeight = (vh - margin * 2) + 'px';
+      m.style.overflowY = 'auto';
+    }
   }
 
   function isWs(c) {
@@ -221,7 +322,6 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     t.value = ta.value; t.focus();
   }
 
-  // Fast file read: Blob.prototype.text() when available, FileReader fallback.
   function importFromFile(file) {
     if (!file) return;
     function done(text) {
@@ -247,9 +347,6 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     download: download,
     top: function () { ta.scrollTop = 0; },
     bottom: function () { ta.scrollTop = ta.scrollHeight; },
-    /* Classic theme reproduces the original func.js verbatim:
-       word count = value.split(" ").length (naive, inflates on repeated spaces),
-       char count = value.length (includes whitespace). */
     words: function () {
       if (isClassic()) {
         var n = ta.value.split(" ").length;
@@ -331,13 +428,17 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     if (a === 'menu') {
       var m = doc.getElementById(el.getAttribute('data-m')), was = m.classList.contains('open');
       closeMenus();
-      if (!was) m.classList.add('open');
+      if (!was) { m.classList.add('open'); positionMenu(m); }
       return;
     }
     if (actions[a]) { actions[a](); if (a === 'words' || a === 'chars' || a === 'popup' || a === 'copy' || a === 'cut') closeMenus(); }
   });
 
-  // Ctrl/Cmd + S == Export (download the current text as .txt)
+  window.addEventListener('resize', function () {
+    var m = doc.querySelector('.menu.open');
+    if (m) positionMenu(m);
+  });
+
   doc.addEventListener('keydown', function (e) {
     if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === 's' || e.key === 'S')) {
       e.preventDefault();
@@ -436,6 +537,54 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
 
   resetHist();
 
+  /* ---- Google Fonts ---- */
+  function sanitizeFontName(s) {
+    return String(s || '').replace(/[^A-Za-z0-9 \-]/g, '').replace(/\s+/g, ' ').trim().slice(0, 64);
+  }
+  var loadedFonts = {};
+  function loadGoogleFont(name) {
+    var safe = sanitizeFontName(name);
+    if (!safe || loadedFonts[safe]) return;
+    loadedFonts[safe] = true;
+    var link = doc.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=' + safe.replace(/ /g, '+') + ':wght@400;700&display=swap';
+    doc.head.appendChild(link);
+  }
+
+  var customFontTimer = 0;
+  function applyCustomFont(name, immediateLoad) {
+    var safe = sanitizeFontName(name);
+    if (!safe) {
+      root.style.removeProperty('--editor-font');
+      return;
+    }
+    root.style.setProperty('--editor-font', '"' + safe + '", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace');
+    clearTimeout(customFontTimer);
+    if (immediateLoad) loadGoogleFont(safe);
+    else customFontTimer = setTimeout(function () { loadGoogleFont(safe); }, 300);
+  }
+
+  /* ---- Font size ---- */
+  function normalizeSize(v) {
+    if (v == null) return 'default';
+    var raw = String(v).trim();
+    if (!raw) return 'default';
+    var n = parseInt(raw, 10);
+    if (isNaN(n)) return 'default';
+    if (n < 8) n = 8;
+    if (n > 72) n = 72;
+    return String(n);
+  }
+  function applyFontSize(size) {
+    var n = parseInt(size, 10);
+    if (!isNaN(n) && n >= 8 && n <= 72) {
+      root.style.setProperty('--editor-font-size', n + 'px');
+    } else {
+      root.style.removeProperty('--editor-font-size');
+    }
+  }
+
   /* ---- Theme settings ---- */
   function loadSettings() {
     var s = null;
@@ -452,6 +601,9 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     if (s.theme !== 'classic') s.theme = 'custom';
     if (s.editor !== 'light' && s.editor !== 'dark') s.editor = 'parchment';
     if (s.footer !== 'parchment' && s.footer !== 'light' && s.footer !== 'dark') s.footer = s.editor;
+    if (FONTS.indexOf(s.font) < 0) s.font = 'mono';
+    s.size = normalizeSize(s.size);
+    if (typeof s.customFont !== 'string') s.customFont = '';
     s.sameFooter = s.sameFooter !== false;
     return s;
   }
@@ -467,10 +619,20 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
       root.setAttribute('data-theme', 'classic');
       root.removeAttribute('data-editor');
       root.removeAttribute('data-footer');
+      root.removeAttribute('data-font');
+      root.style.removeProperty('--editor-font');
+      root.style.removeProperty('--editor-font-size');
     } else {
       root.setAttribute('data-theme', 'custom');
       root.setAttribute('data-editor', settings.editor);
       root.setAttribute('data-footer', settings.sameFooter ? settings.editor : settings.footer);
+      root.setAttribute('data-font', settings.font);
+      if (settings.font === 'custom') {
+        applyCustomFont(settings.customFont, true);
+      } else {
+        root.style.removeProperty('--editor-font');
+      }
+      applyFontSize(settings.size);
     }
     syncThemeUI();
     updateCounts();
@@ -499,6 +661,16 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     if (fg) fg.hidden = !!settings.sameFooter;
     var el = doc.getElementById('editorLabel');
     if (el) el.textContent = settings.sameFooter ? 'Theme' : 'Text editor theme';
+    var fs = doc.getElementById('fontSelect');
+    if (fs) fs.value = settings.font;
+    var si = doc.getElementById('sizeInput');
+    if (si) si.value = settings.size === 'default' ? '' : settings.size;
+    var ci = doc.getElementById('customFontInput');
+    if (ci) {
+      var isCustom = settings.font === 'custom';
+      ci.hidden = !isCustom;
+      if (isCustom && ci.value !== settings.customFont) ci.value = settings.customFont || '';
+    }
   }
 
   var sameFooterCb = doc.getElementById('sameFooter');
@@ -508,6 +680,76 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
       settings.sameFooter = sameFooterCb.checked;
       applySettings();
       saveSettings();
+    });
+  }
+
+  var fontSelect = doc.getElementById('fontSelect');
+  if (fontSelect) {
+    fontSelect.addEventListener('change', function () {
+      settings.theme = 'custom';
+      settings.font = fontSelect.value;
+      applySettings();
+      saveSettings();
+      if (settings.font === 'custom') {
+        var ci = doc.getElementById('customFontInput');
+        if (ci && !ci.hidden) ci.focus();
+      }
+    });
+  }
+
+  var sizeInput = doc.getElementById('sizeInput');
+  function commitSize() {
+    if (!sizeInput) return;
+    settings.theme = 'custom';
+    settings.size = normalizeSize(sizeInput.value);
+    sizeInput.value = settings.size === 'default' ? '' : settings.size;
+    applyFontSize(settings.size);
+    saveSettings();
+  }
+  if (sizeInput) {
+    sizeInput.addEventListener('input', function () {
+      var raw = sizeInput.value.trim();
+      settings.theme = 'custom';
+      if (raw === '') {
+        settings.size = 'default';
+        applyFontSize('default');
+      } else if (/^\d+$/.test(raw)) {
+        var n = parseInt(raw, 10);
+        if (n >= 8 && n <= 72) {
+          settings.size = String(n);
+          applyFontSize(String(n));
+        }
+      }
+    });
+    sizeInput.addEventListener('change', commitSize);
+    sizeInput.addEventListener('blur', commitSize);
+    sizeInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); sizeInput.blur(); }
+      if (e.key === 'Escape') { e.preventDefault(); sizeInput.value = settings.size === 'default' ? '' : settings.size; sizeInput.blur(); }
+    });
+  }
+
+  var customFontInput = doc.getElementById('customFontInput');
+  if (customFontInput) {
+    customFontInput.addEventListener('input', function () {
+      clearTimeout(customFontTimer);
+      customFontTimer = setTimeout(function () {
+        settings.theme = 'custom';
+        settings.font = 'custom';
+        settings.customFont = customFontInput.value;
+        applyCustomFont(customFontInput.value, false);
+        saveSettings();
+      }, 300);
+    });
+    customFontInput.addEventListener('change', function () {
+      settings.theme = 'custom';
+      settings.font = 'custom';
+      settings.customFont = customFontInput.value;
+      applyCustomFont(customFontInput.value, true);
+      saveSettings();
+    });
+    customFontInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); customFontInput.blur(); }
     });
   }
 
