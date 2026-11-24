@@ -67,6 +67,7 @@ body{background:var(--bg);color:var(--page-color);overflow:hidden;overscroll-beh
 form{display:flex;flex-direction:column;height:100%;margin:0}
 #text{flex:1 1 auto;width:100%;box-sizing:border-box;margin:0;padding:4px;resize:none;background:var(--editor-bg);border:var(--editor-border);border-bottom:var(--editor-border-bottom);color:var(--editor-color);font-family:var(--editor-font,ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace);font-size:var(--editor-font-size,14px);transition:background-color .2s,color .2s,border-color .2s}
 #text:focus{outline:0}
+:root[data-code=on] #text{white-space:pre;overflow-wrap:normal;overflow-x:auto;-moz-tab-size:var(--tab-size,4);tab-size:var(--tab-size,4)}
 .toolbar{display:flex;align-items:center;gap:var(--bar-gap);padding:var(--bar-padding);background:var(--bar-bg);border-top:var(--bar-border-top);font-family:var(--bar-font);font-size:var(--bar-font-size);color:var(--bar-color);touch-action:manipulation;transition:background-color .2s,border-color .2s}
 .toolbar .btn{font:inherit;padding:var(--btn-padding);border:var(--btn-border);border-radius:var(--btn-radius);background:var(--btn-bg);color:var(--btn-color);cursor:pointer;transition:background .15s,border-color .15s}
 .toolbar .btn:hover{background:var(--btn-hover-bg);border-color:var(--btn-hover-border)}
@@ -246,6 +247,17 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
 <span class="tp-size-wrap"><input type="number" class="tp-size" id="sizeInput" min="8" max="72" step="1" inputmode="numeric" placeholder="auto" aria-label="Font size in pixels (empty for default)"></span>
 </div>
 <input type="text" class="tp-input" id="customFontInput" placeholder="Google Font name, e.g. Roboto" hidden>
+</div>
+<div class="tp-group">
+<label class="tp-check"><input type="checkbox" id="codeMode"> Code mode</label>
+</div>
+<div class="tp-group" id="indentGroup" hidden>
+<div class="tp-label">Indent</div>
+<select class="tp-select" id="indentSelect" aria-label="Indent style">
+<option value="4">4 spaces</option>
+<option value="2">2 spaces</option>
+<option value="tab">Tab</option>
+</select>
 </div>
 <div class="tp-group">
 <label class="tp-check"><input type="checkbox" id="sameFooter" checked> Menu matches editor</label>
@@ -566,6 +578,8 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     var t = e.inputType;
     if (t === 'historyUndo') { e.preventDefault(); undo(); return; }
     if (t === 'historyRedo') { e.preventDefault(); redo(); return; }
+    if (inCode) return;
+    if (codeOn() && !e.isComposing && handleCodeInput(e)) { lastKey = ''; return; }
     preSel = ta.selectionStart !== ta.selectionEnd;
     pendType = t; pendData = e.data;
   });
@@ -580,6 +594,7 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     var k = e.key;
     if (k === 'Tab') {
       e.preventDefault();
+      if (codeOn()) { codeTab(e.shiftKey); return; }
       ta.setRangeText('\t', ta.selectionStart, ta.selectionEnd, 'end');
       record(''); updateCounts();
       return;
@@ -600,6 +615,136 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
   });
 
   resetHist();
+
+  /* ---- Code mode ---- */
+  var BRACE_EXT = { js:1, mjs:1, cjs:1, jsx:1, ts:1, tsx:1, json:1, java:1, c:1, cpp:1, h:1, cs:1, go:1, rs:1, php:1, css:1, scss:1, swift:1, kt:1 };
+  var inCode = false;
+
+  function codeOn() { return !!settings.code && settings.layout !== 'classic'; }
+  function indentSize() { return settings.indent === '2' ? 2 : 4; }
+  function spaces(n) { return new Array(n + 1).join(' '); }
+  function indentUnit() { return settings.indent === 'tab' ? '\t' : spaces(indentSize()); }
+  function isPython() {
+    var fn = (fileNameInput && fileNameInput.value) || '';
+    var m = /\.([A-Za-z0-9]+)\s*$/.exec(fn);
+    return !(m && BRACE_EXT[m[1].toLowerCase()]);
+  }
+  function lineStartOf(v, pos) { return pos > 0 ? v.lastIndexOf('\n', pos - 1) + 1 : 0; }
+  function incIndent(lead) {
+    return lead + (lead.indexOf('\t') >= 0 && lead.indexOf(' ') < 0 ? '\t' : indentUnit());
+  }
+  function decIndent(lead) {
+    if (!lead) return lead;
+    if (lead.charAt(lead.length - 1) === '\t') return lead.slice(0, -1);
+    var n = indentSize(), k = 0;
+    while (k < n && lead.charAt(lead.length - 1 - k) === ' ') k++;
+    return lead.slice(0, lead.length - k);
+  }
+
+  /* Replace [from,to) with text through execCommand so scrolling stays right, then place the selection */
+  function codeEdit(from, to, text, selS, selE) {
+    var ok = false;
+    inCode = true;
+    try {
+      ta.setSelectionRange(from, to);
+      if (text === '') ok = from === to ? true : doc.execCommand('delete', false, null);
+      else ok = doc.execCommand('insertText', false, text);
+    } catch (err) { ok = false; }
+    inCode = false;
+    if (!ok) ta.setRangeText(text, from, to, 'end');
+    ta.setSelectionRange(selS, selE === undefined ? selS : selE);
+    record('');
+    updateCounts();
+  }
+
+  function codeEnter() {
+    var v = ta.value, s = ta.selectionStart, en = ta.selectionEnd, py = isPython();
+    var ls = lineStartOf(v, s), before = v.slice(ls, s);
+    var lead = /^[ \t]*/.exec(before)[0];
+    var code = before.replace(py ? /(^|\s)#.*$/ : /(^|\s)\/\/.*$/, '').replace(/\s+$/, '');
+    var last = code.charAt(code.length - 1);
+    var newLead = lead, inc = false;
+    if (last && '{[('.indexOf(last) >= 0) inc = true;
+    else if (py && last === ':') inc = true;
+
+    if (inc) newLead = incIndent(lead);
+    else if (py && /^(return|pass|break|continue|raise)\b/.test(code.trim()) &&
+             !/[;,\\]$/.test(code) && !/[{}]/.test(code)) {
+      var opens = (code.match(/[(\[]/g) || []).length, closes = (code.match(/[)\]]/g) || []).length;
+      if (opens <= closes) newLead = decIndent(lead);
+    }
+
+    var from = s;
+    if (s === en && /^[ \t]+$/.test(before) && (en === v.length || v.charAt(en) === '\n')) from = ls;
+
+    var next = v.charAt(en), closer = { '{': '}', '[': ']', '(': ')' }[last];
+    if (inc && closer && next === closer) {
+      codeEdit(from, en, '\n' + newLead + '\n' + lead, from + 1 + newLead.length);
+    } else {
+      var t = '\n' + newLead;
+      codeEdit(from, en, t, from + t.length);
+    }
+  }
+
+  function codeTab(shift) {
+    var v = ta.value, s = ta.selectionStart, en = ta.selectionEnd;
+    var multi = v.slice(s, en).indexOf('\n') >= 0;
+    if (!shift && !multi) {
+      var ins;
+      if (settings.indent === 'tab') ins = '\t';
+      else { var u = indentSize(); ins = spaces(u - ((s - lineStartOf(v, s)) % u)); }
+      codeEdit(s, en, ins, s + ins.length);
+      return;
+    }
+    var ls = lineStartOf(v, s), endPos = en;
+    if (en > s && v.charAt(en - 1) === '\n') endPos = en - 1;
+    var le = v.indexOf('\n', endPos);
+    if (le < 0) le = v.length;
+    var lines = v.slice(ls, le).split('\n'), total = 0, d0 = 0;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i], lead = /^[ \t]*/.exec(line)[0], rest = line.slice(lead.length), nl;
+      if (shift) nl = decIndent(lead);
+      else if (rest === '') nl = lead;
+      else nl = incIndent(lead);
+      var d = nl.length - lead.length;
+      lines[i] = nl + rest;
+      total += d;
+      if (i === 0) d0 = d;
+    }
+    var newS, newE;
+    if (shift) { newS = Math.max(ls, s + d0); newE = Math.max(newS, en + total); }
+    else { newS = s === ls ? s : s + d0; newE = en + total; }
+    codeEdit(ls, le, lines.join('\n'), newS, newE);
+  }
+
+  function handleCodeInput(e) {
+    var t = e.inputType, v = ta.value, s = ta.selectionStart, en = ta.selectionEnd;
+    if (t === 'insertLineBreak' || t === 'insertParagraph') {
+      e.preventDefault(); codeEnter(); return true;
+    }
+    if (s !== en) return false;
+    var ls = lineStartOf(v, s), before = v.slice(ls, s);
+    if (t === 'deleteContentBackward' && settings.indent !== 'tab' && /^ +$/.test(before)) {
+      var u = indentSize(), k = before.length % u || u;
+      e.preventDefault(); codeEdit(s - k, s, '', s - k); return true;
+    }
+    if (t === 'insertText' && e.data && /^[}\])]$/.test(e.data) && /^[ \t]+$/.test(before)) {
+      var nl = decIndent(before);
+      e.preventDefault(); codeEdit(ls, s, nl + e.data, ls + nl.length + 1); return true;
+    }
+    return false;
+  }
+
+  function applyCode() {
+    var on = codeOn(), attrs = ['wrap', 'autocapitalize', 'autocorrect', 'autocomplete'];
+    root.setAttribute('data-code', on ? 'on' : 'off');
+    root.style.setProperty('--tab-size', settings.indent === '2' ? 2 : 4);
+    ta.spellcheck = !on;
+    for (var i = 0; i < attrs.length; i++) {
+      if (on) ta.setAttribute(attrs[i], 'off');
+      else ta.removeAttribute(attrs[i]);
+    }
+  }
 
   /* ---- Google Fonts ---- */
   function sanitizeFontName(s) {
@@ -674,6 +819,8 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
     s.size = normalizeSize(s.size);
     if (typeof s.customFont !== 'string') s.customFont = '';
     s.sameFooter = s.sameFooter !== false;
+    s.code = s.code === true;
+    if (s.indent !== '2' && s.indent !== 'tab') s.indent = '4';
     return s;
   }
 
@@ -704,6 +851,7 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
       }
       applyFontSize(settings.size);
     }
+    applyCode();
     syncThemeUI();
     updateCounts();
   }
@@ -724,6 +872,12 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
       var onF = settings.layout !== 'classic' && fts[k].getAttribute('data-footer-opt') === settings.footer;
       fts[k].setAttribute('aria-pressed', onF ? 'true' : 'false');
     }
+    var cm = doc.getElementById('codeMode');
+    if (cm) cm.checked = !!settings.code;
+    var ig = doc.getElementById('indentGroup');
+    if (ig) ig.hidden = !settings.code;
+    var is = doc.getElementById('indentSelect');
+    if (is) is.value = settings.indent;
     var cb = doc.getElementById('sameFooter');
     if (cb) cb.checked = !!settings.sameFooter;
     var fg = doc.getElementById('footerGroup');
@@ -740,6 +894,23 @@ form{flex-direction:column-reverse;height:var(--vvh,100%)}
       ci.hidden = !isCustom;
       if (isCustom && ci.value !== settings.customFont) ci.value = settings.customFont || '';
     }
+  }
+
+  var codeModeCb = doc.getElementById('codeMode');
+  if (codeModeCb) {
+    codeModeCb.addEventListener('change', function () {
+      settings.code = codeModeCb.checked;
+      applySettings();
+      saveSettings();
+    });
+  }
+  var indentSelect = doc.getElementById('indentSelect');
+  if (indentSelect) {
+    indentSelect.addEventListener('change', function () {
+      settings.indent = indentSelect.value;
+      applySettings();
+      saveSettings();
+    });
   }
 
   var sameFooterCb = doc.getElementById('sameFooter');
